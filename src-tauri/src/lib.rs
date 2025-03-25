@@ -13,6 +13,8 @@ fn greet(name: &str) -> String {
 // A list of menus in a simple format to pass as args
 // to the create_menu function
 // menu_id, menu_name, is_enabled, accelerator
+// The following functions are for tricking the linter into forcing you to
+// implement all the menu items in the MENUS array
 const MENUS: [(&str, &str, bool, Option<&str>); 4] = [
     ("quit", "Quit", true, None),
     ("test", "Test", true, None),
