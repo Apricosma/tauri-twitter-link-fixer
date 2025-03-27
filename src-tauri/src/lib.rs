@@ -5,7 +5,7 @@ use tauri::{
     AppHandle, Manager, Runtime,
 };
 pub mod services;
-use crate::services::clipboard::test_clipboard_context;
+use crate::services::clipboard::{ test_clipboard_context, get_clipboard_content, set_clipboard_content };
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -17,11 +17,13 @@ fn greet(name: &str) -> String {
 // menu_id, menu_name, is_enabled, accelerator
 // The following functions are for tricking the linter into forcing you to
 // implement all the menu items in the MENUS array
-const MENUS: [(&str, &str, bool, Option<&str>); 4] = [
+const MENUS: [(&str, &str, bool, Option<&str>); 6] = [
     ("quit", "Quit", true, None),
     ("test", "Test", true, None),
     ("hide", "Hide", true, None),
     ("show", "Show", true, None),
+    ("set_clipboard", "Set Clipboard", true, None),
+    ("get_clipboard", "Get Clipboard", true, None),
 ];
 
 #[derive(Debug)]
@@ -30,6 +32,8 @@ enum MenuId {
     Test,
     Hide,
     Show,
+    SetClipboard,
+    GetClipboard,
 }
 
 fn parse_menu_id(id: &str) -> Result<MenuId, String> {
@@ -38,6 +42,8 @@ fn parse_menu_id(id: &str) -> Result<MenuId, String> {
         "test" => Ok(MenuId::Test),
         "hide" => Ok(MenuId::Hide),
         "show" => Ok(MenuId::Show),
+        "set_clipboard" => Ok(MenuId::SetClipboard),
+        "get_clipboard" => Ok(MenuId::GetClipboard),
         _ => Err(format!("Unknown menu id: {}", id)),
     }
 }
@@ -48,6 +54,15 @@ fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, menu_id_str: &str) {
             MenuId::Test => {
                 println!("Test menu item clicked");
                 test_clipboard_context();
+            }
+            MenuId::SetClipboard => {
+                println!("Set Clipboard menu item clicked");
+                set_clipboard_content("Hello, clipboard!").expect("Failed to set clipboard content");
+            }
+            MenuId::GetClipboard => {
+                println!("Get Clipboard menu item clicked");
+                let clipboard_content = get_clipboard_content().expect("Failed to get clipboard content");
+                println!("Clipboard content: {}", clipboard_content);
             }
             MenuId::Hide => {
                 if let Some(window) = app.get_webview_window("main") {
