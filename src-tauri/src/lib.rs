@@ -4,6 +4,8 @@ use tauri::{
     tray::{TrayIcon, TrayIconBuilder},
     AppHandle, Manager, Runtime,
 };
+pub mod services;
+use crate::services::clipboard::test_clipboard_context;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -45,6 +47,7 @@ fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, menu_id_str: &str) {
         Ok(menu_id) => match menu_id {
             MenuId::Test => {
                 println!("Test menu item clicked");
+                test_clipboard_context();
             }
             MenuId::Hide => {
                 if let Some(window) = app.get_webview_window("main") {
