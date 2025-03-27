@@ -16,10 +16,8 @@ function App() {
     <main className="container mx-auto p-6">
       <h1 className="text-4xl">Twitter Link Fixer</h1>
 
-      <div className="flex items-center justify-center space-x-6 my-6">
-        <img alt="React Logo" className="h-24 w-24" src={reactLogo} />
-        <img alt="Vite Logo" className="h-24 w-24" src="/vite.svg" />
-        <img alt="Tauri Logo" className="h-24 w-24" src="/tauri.svg" />
+      <div className="flex items-center justify-center space-x-6">
+        <img alt="Twitter Link Fixer Logo" className="h-24 w-24 drop-shadow-xl hover:animate-spin" src="/twitter.svg" />
       </div>
 
       <form

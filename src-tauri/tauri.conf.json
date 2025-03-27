@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "tauri-twitter-link-fixer",
+        "title": "Twitter Link Fixer",
         "width": 800,
         "height": 600
       }
