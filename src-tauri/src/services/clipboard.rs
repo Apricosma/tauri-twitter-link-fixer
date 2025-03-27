@@ -1,27 +1,44 @@
 extern crate copypasta;
 
 use copypasta::{ClipboardContext, ClipboardProvider};
+use std::error::Error;
 
-pub fn test_clipboard_context() {
-  let mut ctx = ClipboardContext::new().unwrap();
-
-  let msg = "Hello, world!";
-  ctx.set_contents(msg.to_owned()).unwrap();
-  let contents = ctx.get_contents().unwrap();
-
-  println!("Clipboard contents: {}", contents);
+pub struct ClipboardManager {
+    previous_content: String,
 }
 
-pub fn get_clipboard_content() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-  let mut ctx = ClipboardContext::new()?;
-  let contents = ctx.get_contents()?;
-  Ok(contents)
-}
+impl ClipboardManager {
+    // Create a new ClipboardManager instance
+    pub fn new() -> Self {
+        ClipboardManager {
+            previous_content: String::new(),
+        }
+    }
 
-pub fn set_clipboard_content(context_string: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-  let mut ctx = ClipboardContext::new()?;
-  ctx.set_contents(context_string.to_owned())?;
-  Ok(())
+    // Get the current clipboard content
+    pub fn get_clipboard_content(&mut self) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let mut ctx = ClipboardContext::new()?;
+        let contents = ctx.get_contents()?;
+        Ok(contents)
+    }
+
+    // Set the clipboard content
+    pub fn set_clipboard_content(&mut self, context_string: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut ctx = ClipboardContext::new()?;
+        ctx.set_contents(context_string.to_owned())?;
+        Ok(())
+    }
+
+    // Check if the clipboard content has changed
+    pub fn has_clipboard_changed(&mut self) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        let current_content = self.get_clipboard_content()?;
+        if current_content != self.previous_content {
+            self.previous_content = current_content;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -29,21 +46,28 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_set_and_get_clipboard_content() {
+    fn test_clipboard_manager() {
+        let mut clipboard_manager = ClipboardManager::new();
+
         let test_string = "Test clipboard content";
 
         // Test setting clipboard content
-        let set_result = set_clipboard_content(test_string);
+        let set_result = clipboard_manager.set_clipboard_content(test_string);
         assert!(set_result.is_ok(), "Failed to set clipboard content");
-        // Assert the test_string is the same string as the set_result content
-        assert_eq!(set_result.unwrap(), (), "Clipboard content mismatch");
-        
 
         // Test getting clipboard content
-        let get_result = get_clipboard_content();
+        let get_result = clipboard_manager.get_clipboard_content();
         assert!(get_result.is_ok(), "Failed to get clipboard content");
 
         let clipboard_content = get_result.unwrap();
         assert_eq!(clipboard_content, test_string, "Clipboard content mismatch");
+
+        // Test clipboard change detection
+        let has_changed = clipboard_manager.has_clipboard_changed().unwrap();
+        assert!(has_changed, "Clipboard change was not detected");
+
+        // Test no change in clipboard
+        let has_changed_again = clipboard_manager.has_clipboard_changed().unwrap();
+        assert!(!has_changed_again, "Clipboard incorrectly detected as changed");
     }
 }

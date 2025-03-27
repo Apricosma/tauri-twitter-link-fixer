@@ -3896,6 +3896,7 @@ name = "tauri-twitter-link-fixer"
 version = "0.1.0"
 dependencies = [
  "copypasta",
+ "once_cell",
  "serde",
  "serde_json",
  "tauri",
