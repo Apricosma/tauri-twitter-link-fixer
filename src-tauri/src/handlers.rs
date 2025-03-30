@@ -42,6 +42,24 @@ pub fn handle_show_window<R: Runtime>(app: &AppHandle<R>) {
     });
 }
 
+pub fn is_window_visible<R: Runtime>(app: &AppHandle<R>) -> bool {
+    if let Some(window) = app.get_webview_window("main") {
+        window.is_visible().unwrap_or(false)
+    } else {
+        println!("Main window not found.");
+        false
+    }
+}
+
+pub fn window_visibility_manager<R: Runtime>(app: &AppHandle<R>) {
+    if !is_window_visible(app) {
+        handle_show_window(app);
+        return;
+    }
+
+    handle_hide_window(app);
+}
+
 pub fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, menu_id_str: &str) {
     match MenuId::parse_menu_id(menu_id_str) {
         Ok(menu_id) => match menu_id {
