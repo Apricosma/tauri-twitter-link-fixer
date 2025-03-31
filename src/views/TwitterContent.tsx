@@ -2,6 +2,7 @@ import { useState } from "react";
 import sources from "../converter-sources.json";
 import Card from "../Components/Card";
 import ContentContainer from "../Components/ContentContainer";
+import { invoke } from "@tauri-apps/api/core";
 
 const TwitterContent = () => {
   const twitterSources = sources.sources.find(
@@ -12,11 +13,16 @@ const TwitterContent = () => {
 
   const handleCardClick = (embed: string) => {
     setSelectedCard((prev) => (prev === embed ? null : embed));
+    invoke("greet_from_app", { invokeMessage: embed });
+
+    // payload stuff?
   };
 
   return (
     <>
-      <h1 className="text-4xl flex items-center justify-center">Twitter Embeds</h1>
+      <h1 className="text-4xl flex items-center justify-center">
+        Twitter Embeds
+      </h1>
 
       <div className="flex items-center justify-center space-x-6">
         <img
