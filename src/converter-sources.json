@@ -1,0 +1,29 @@
+{
+  "sources": [
+    {
+      "platform": "twitter",
+      "embeds": [
+        "fxtwitter",
+        "vxtwitter",
+        "fixupx",
+        "fixvx"
+      ]
+    },
+    {
+      "platform": "bluesky",
+      "embeds": [
+        "bsky",
+        "fxbsky",
+        "vxbsky",
+        "bskye",
+        "bskyx"
+      ]
+    },
+    {
+      "platform": "instagram",
+      "embeds": [
+        "ddinstagram"
+      ]
+    }
+  ]
+}

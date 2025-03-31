@@ -1,40 +1,30 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
 import Sidebar from "./Components/Sidebar";
+import ActiveViewContent from "./Components/ActiveViewContent";
+import { ViewType } from "./Components/ActiveViewContent";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
-
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  const [activeView, setActiveView] = useState<ViewType>(ViewType.Home);
 
   const sidebarItems = [
-    { label: "Home", onClick: () => alert("Home clicked") },
-    { label: "Profile", onClick: () => alert("Profile clicked") },
-    { label: "Settings", onClick: () => alert("Settings clicked") },
-    { label: "Logout", onClick: () => alert("Logout clicked") },
+    { label: "Home", onClick: () => setActiveView(ViewType.Home) },
+    { label: "Twitter", onClick: () => setActiveView(ViewType.Twitter) },
+    { label: "BlueSky", onClick: () => setActiveView(ViewType.BlueSky) },
+    { label: "Instagram", onClick: () => setActiveView(ViewType.Instagram) },
+    { label: "TikTok", onClick: () => setActiveView(ViewType.TikTok) },
   ];
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar items={sidebarItems} />
-      <main className="container mx-auto p-6">
-        <h1 className="text-4xl flex items-center justify-center">
-          Twitter Link Fixer
-        </h1>
+    <div className="flex min-h-screen bg-appbg">
+      {/* Sidebar and Main Dock Area */}
+      <div className="flex flex-col w-64 flex-shrink-0 bg-appbg text-white">
+        <Sidebar items={sidebarItems} />
+      </div>
 
-        <div className="flex items-center justify-center space-x-6">
-          <img
-            alt="Twitter Link Fixer Logo"
-            className="h-24 w-24 drop-shadow-xl hover:animate-spin"
-            src="/twitter.svg"
-          />
-        </div>
+      {/* Main App Section */}
+      <main className="flex-grow container mx-auto px-4 py-2">
+        <ActiveViewContent activeView={activeView} />
       </main>
     </div>
   );

@@ -42,3 +42,8 @@
     color: #24c8db;
   }
 }
+
+@theme {
+  --color-appbg: #1D1F21;
+  --color-appforeground: #2C2E30;
+}
