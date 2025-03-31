@@ -1,13 +1,22 @@
+import { useState } from "react";
 import sources from "../converter-sources.json";
+import Card from "../Components/Card";
+import ContentContainer from "../Components/ContentContainer";
 
 const TwitterContent = () => {
   const twitterSources = sources.sources.find(
     (source) => source.platform === "twitter"
   );
 
+  const [selectedCard, setSelectedCard] = useState<string | null>(null);
+
+  const handleCardClick = (embed: string) => {
+    setSelectedCard((prev) => (prev === embed ? null : embed));
+  };
+
   return (
     <>
-      <h1 className="text-4xl flex items-center justify-center"></h1>
+      <h1 className="text-4xl flex items-center justify-center">Twitter Embeds</h1>
 
       <div className="flex items-center justify-center space-x-6">
         <img
@@ -16,16 +25,16 @@ const TwitterContent = () => {
           src="/twitter.svg"
         />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4">
+      <ContentContainer>
         {twitterSources?.embeds.map((embed, index) => (
-          <div
+          <Card
             key={index}
-            className="h-24 w-full bg-appforeground flex items-center justify-center shadow-md hover:bg-gray-300 rounded-md"
-          >
-            {embed}
-          </div>
+            embed={embed}
+            isSelected={selectedCard === embed}
+            onClick={() => handleCardClick(embed)}
+          />
         ))}
-      </div>
+      </ContentContainer>
     </>
   );
 };

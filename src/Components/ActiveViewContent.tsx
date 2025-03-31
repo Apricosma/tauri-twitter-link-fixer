@@ -36,8 +36,6 @@ const ActiveViewContent = ({ activeView }: ActiveViewContentProps) => {
   const ActiveComponent = viewRegistry[activeView];
   return (
     <div className="flex-1 p-2">
-      {/* {activeView === "home" && <HomeContent />}
-      {activeView === "twitter" && <TwitterContent />} */}
       <ActiveComponent />
     </div>
   );
