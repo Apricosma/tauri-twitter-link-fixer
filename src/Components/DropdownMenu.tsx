@@ -7,9 +7,13 @@ interface DropdownProps {
   onSelect?: (selected: string) => void;
 }
 
-const DropdownMenu: React.FC<DropdownProps> = ({ options, label, onSelect }) => {
+const DropdownMenu: React.FC<DropdownProps> = ({
+  options,
+  label,
+  selected,
+  onSelect,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleToggle = () => {
@@ -17,9 +21,8 @@ const DropdownMenu: React.FC<DropdownProps> = ({ options, label, onSelect }) => 
   };
 
   const handleSelect = (option: string) => {
-    setSelectedOption(option);
+    onSelect?.(option);
     setIsOpen(false);
-    onSelect?.(option); // Call the callback if provided
   };
 
   const handleClickOutside = (event: MouseEvent) => {
@@ -42,13 +45,13 @@ const DropdownMenu: React.FC<DropdownProps> = ({ options, label, onSelect }) => 
           {label}
         </label>
       )}
-      <div className="relative inline-block text-left w-48"> {/* Adjusted width */}
+      <div className="relative inline-block text-left w-48">
         <button
           type="button"
           onClick={handleToggle}
           className="inline-flex justify-between w-full rounded-md border border-gray-600 shadow-sm px-4 py-2 bg-appbg text-sm font-medium text-gray-300 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
-          {selectedOption || "Select an option"}
+          {selected || "Select an option"}
           <svg
             className={`-mr-1 ml-2 h-5 w-5 transform transition-transform ${
               isOpen ? "rotate-180" : "rotate-0"

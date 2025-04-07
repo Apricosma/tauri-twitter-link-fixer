@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use config::{Config, ConfigError, File};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -95,47 +95,70 @@ impl Default for SourcesConfig {
 
 impl SourcesConfig {
     pub fn from_file_or_default(path: &str) -> Result<Self, ConfigError> {
-        if !Path::new(path).exists() {
-            println!("Config file not found. Creating default config at {}", path);
+        let config_path = Path::new(path);
+
+        if !config_path.exists() {
+            println!(
+                "Config file not found. Creating default config at {:?}",
+                config_path
+            );
+
             let default = Self::default();
             let yaml = serde_yaml::to_string(&default).expect("Failed to serialize default config");
-            fs::write(path, yaml).expect("Failed to write default config file");
+            fs::write(&config_path, yaml).expect("Failed to write default config file");
         }
 
         let settings = Config::builder()
-            .add_source(File::with_name(path))
+            .add_source(File::with_name(path.strip_suffix(".yaml").unwrap_or(path)))
             .build()?;
         settings.try_deserialize()
     }
 
     pub fn save_to_file(&self, path: &str) {
+        // Use a fixed path relative to the project root
+        let config_path = Path::new(path);
+
         let yaml = serde_yaml::to_string(self).expect("Failed to serialize config");
-        fs::write(path, yaml).expect("Failed to write config file");
+        fs::write(&config_path, yaml).expect("Failed to write config file");
     }
 
-    pub fn set_selected_converter(&mut self, platform: Platform, converter_name: &str) -> Result<(), String> {
-      for source in &mut self.sources {
-          match (source, &platform) {
-              (PlatformSource::Twitter(data), Platform::Twitter) => {
-                  if let Some(found) = data.converters.iter().find(|c| format!("{:?}", c).to_lowercase() == converter_name.to_lowercase()) {
-                      data.selected = Some(found.clone());
-                      return Ok(());
-                  } else {
-                      return Err(format!("Converter '{}' not found in Twitter converters", converter_name));
-                  }
-              }
-              (PlatformSource::Bluesky(data), Platform::Bluesky) => {
-                  if let Some(found) = data.converters.iter().find(|c| format!("{:?}", c).to_lowercase() == converter_name.to_lowercase()) {
-                      data.selected = Some(found.clone());
-                      return Ok(());
-                  } else {
-                      return Err(format!("Converter '{}' not found in Bluesky converters", converter_name));
-                  }
-              }
-              // Add similar match arms here later for Instagram, Reddit, TikTok...
-              _ => {}
-          }
-      }
-      Err(format!("Platform '{:?}' not found in sources", platform))
-  }
+    pub fn set_selected_converter(
+        &mut self,
+        platform: Platform,
+        converter_name: &str,
+    ) -> Result<(), String> {
+        for source in &mut self.sources {
+            match (source, &platform) {
+                (PlatformSource::Twitter(data), Platform::Twitter) => {
+                    if let Some(found) = data.converters.iter().find(|c| {
+                        format!("{:?}", c).to_lowercase() == converter_name.to_lowercase()
+                    }) {
+                        data.selected = Some(found.clone());
+                        return Ok(());
+                    } else {
+                        return Err(format!(
+                            "Converter '{}' not found in Twitter converters",
+                            converter_name
+                        ));
+                    }
+                }
+                (PlatformSource::Bluesky(data), Platform::Bluesky) => {
+                    if let Some(found) = data.converters.iter().find(|c| {
+                        format!("{:?}", c).to_lowercase() == converter_name.to_lowercase()
+                    }) {
+                        data.selected = Some(found.clone());
+                        return Ok(());
+                    } else {
+                        return Err(format!(
+                            "Converter '{}' not found in Bluesky converters",
+                            converter_name
+                        ));
+                    }
+                }
+                // Add similar match arms here later for Instagram, Reddit, TikTok...
+                _ => {}
+            }
+        }
+        Err(format!("Platform '{:?}' not found in sources", platform))
+    }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 
 interface ToggleSwitchProps {
   id: string;
@@ -17,14 +17,10 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   onChange,
   className = "",
 }) => {
-  const [isChecked, setIsChecked] = useState<boolean>(checked);
 
   const handleToggle = () => {
     if (disabled) return;
-
-    const newChecked = !isChecked;
-    setIsChecked(newChecked);
-    onChange?.(newChecked);
+    onChange?.(!checked);  // <- TRUST the "checked" prop, not internal state
   };
 
   return (
@@ -38,16 +34,16 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
         id={id}
         type="button"
         role="switch"
-        aria-checked={isChecked}
+        aria-checked={checked}
         disabled={disabled}
         onClick={handleToggle}
         className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-150 border-1 border-appbg hover:border-blue-200
-          ${isChecked ? "bg-blue-600" : "bg-appbg"}
+          ${checked ? "bg-blue-600" : "bg-appbg"}
           ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
       >
         <div
           className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-150
-            ${isChecked ? "translate-x-6" : "translate-x-0"}`}
+            ${checked ? "translate-x-6" : "translate-x-0"}`}
         />
       </button>
     </div>
