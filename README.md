@@ -11,3 +11,9 @@ Planned features
 ## Recommended IDE Setup
 
 - [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+
+## How to run
+- Navigate to directory
+- `npm run tauri dev`
+- Compile go brrrt
+- That's it! 
