@@ -1,6 +1,12 @@
-# Tauri + React + Typescript
+# Twitter and other discord embed helper
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+A work-in-progress tauri based app to make embedding in discord or other social media platforms easier with services such as vxtwitter, or bskx
+
+Planned features 
+- Easily toggle between different services
+- A preview of how the embed looks inside of discord
+- All commonly used platforms such as discord, instagram, tiktok, bluesky, and reddit
+- Tray management for easy desktop usage 
 
 ## Recommended IDE Setup
 
