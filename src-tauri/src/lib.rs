@@ -3,6 +3,7 @@ use tauri;
 mod handlers;
 pub mod services;
 mod tray_menu;
+mod config;
 
 use crate::services::clipboard::ClipboardManager;
 use crate::tray_menu::menu::{create_menu, create_tray};
