@@ -1,16 +1,17 @@
 use config::app_config::{Platform, PlatformSource};
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use tauri;
+mod config;
 mod handlers;
 pub mod services;
 mod tray_menu;
-mod config;
 
+use crate::config::app_config::SourcesConfig;
 use crate::services::clipboard::ClipboardManager;
 use crate::tray_menu::menu::{create_menu, create_tray};
 use once_cell::sync::Lazy;
+use std::path::Path;
 use std::sync::Mutex;
-use crate::config::app_config::SourcesConfig;
 use tauri::Manager;
 
 // use handlers::handle_menu_event;
@@ -31,7 +32,12 @@ fn get_config() -> SourcesConfig {
 }
 
 #[tauri::command]
-fn update_config(platform: String, enabled: bool, selected_converter: Option<String>) -> Result<(), String> {
+fn update_config(
+    platform: String,
+    enabled: bool,
+    selected_converter: Option<String>,
+    app: tauri::AppHandle,
+) -> Result<(), String> {
     let mut config = CONFIG.lock().unwrap();
 
     let platform_enum = match platform.to_lowercase().as_str() {
@@ -45,20 +51,34 @@ fn update_config(platform: String, enabled: bool, selected_converter: Option<Str
             (PlatformSource::Twitter(data), Platform::Twitter) => {
                 data.enabled = enabled;
                 if let Some(converter) = selected_converter.clone() {
-                    if let Some(found) = data.converters.iter().find(|c| format!("{:?}", c).to_lowercase() == converter.to_lowercase()) {
+                    if let Some(found) = data
+                        .converters
+                        .iter()
+                        .find(|c| format!("{:?}", c).to_lowercase() == converter.to_lowercase())
+                    {
                         data.selected = Some(found.clone());
                     } else {
-                        return Err(format!("Selected converter '{}' not found in Twitter converters", converter));
+                        return Err(format!(
+                            "Selected converter '{}' not found in Twitter converters",
+                            converter
+                        ));
                     }
                 }
             }
             (PlatformSource::Bluesky(data), Platform::Bluesky) => {
                 data.enabled = enabled;
                 if let Some(converter) = selected_converter.clone() {
-                    if let Some(found) = data.converters.iter().find(|c| format!("{:?}", c).to_lowercase() == converter.to_lowercase()) {
+                    if let Some(found) = data
+                        .converters
+                        .iter()
+                        .find(|c| format!("{:?}", c).to_lowercase() == converter.to_lowercase())
+                    {
                         data.selected = Some(found.clone());
                     } else {
-                        return Err(format!("Selected converter '{}' not found in Bluesky converters", converter));
+                        return Err(format!(
+                            "Selected converter '{}' not found in Bluesky converters",
+                            converter
+                        ));
                     }
                 }
             }
@@ -66,10 +86,16 @@ fn update_config(platform: String, enabled: bool, selected_converter: Option<Str
         }
     }
 
-    config.save_to_file("config.yaml"); // Save immediately
+    let appdata_path = app.path().app_data_dir().expect("Failed to get app data path");
+
+    let config_path = appdata_path.join("config.yaml");
+    config.save_to_file(
+        config_path
+            .to_str()
+            .expect("Failed to convert path to string"),
+    ); // Save immediately
     Ok(())
 }
-
 
 // Create a new clipboard manager instance
 static CLIPBOARD_MANAGER: Lazy<Mutex<ClipboardManager>> =
@@ -105,6 +131,12 @@ impl MenuId {
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
+            // Get appdata path
+            let appdata_path = app
+                .path()
+                .app_data_dir()
+                .expect("Failed to get app data path");
+
             // Get the app handle
             let handle = app.handle();
 
@@ -114,11 +146,15 @@ pub fn run() {
             // create the system tray
             let _tray = create_tray(handle, &menu)?;
 
-            let config_path = "config.yaml";
+            let config_path = appdata_path.join("config.yaml");
 
             // Load or create the configuration
-            let config = SourcesConfig::from_file_or_default(config_path)
-                .expect("Failed to load or create configuration file");
+            let config = SourcesConfig::from_file_or_default(
+                config_path
+                    .to_str()
+                    .expect("Failed to convert config path to string"),
+            )
+            .expect("Failed to load or create configuration file");
             *CONFIG.lock().unwrap() = config;
 
             Ok(())
@@ -128,7 +164,7 @@ pub fn run() {
             greet,
             greet_from_app,
             get_config,
-            update_config
+            update_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

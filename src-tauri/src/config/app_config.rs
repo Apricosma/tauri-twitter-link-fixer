@@ -105,6 +105,13 @@ impl SourcesConfig {
 
             let default = Self::default();
             let yaml = serde_yaml::to_string(&default).expect("Failed to serialize default config");
+
+            if let Some(parent) = config_path.parent() {
+                if !parent.exists() {
+                    fs::create_dir_all(parent).expect("Failed to create config directory");
+                }
+            }
+
             fs::write(&config_path, yaml).expect("Failed to write default config file");
         }
 
