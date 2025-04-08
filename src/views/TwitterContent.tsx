@@ -18,51 +18,40 @@ interface PlatformSource {
 }
 
 const TwitterContent = () => {
-  const [toggleEnabled, setToggleEnabled] = useState(false);
-  const [selectedConverter, setSelectedConverter] = useState<string | null>(null);
-  const [twitterEmbeds, setTwitterEmbeds] = useState<string[]>([]);
+  const [config, setConfig] = useState<SourcesConfig | null>(null);
 
+  // Fetch from backend on mount
   useEffect(() => {
-    // Fetch config from backend
-    invoke<SourcesConfig>("get_config")
-      .then((config) => {
-        const twitter = config.sources.find((source) => source.platform === "twitter");
-        if (twitter) {
-          setToggleEnabled(twitter.data.enabled);
-          setSelectedConverter(twitter.data.selected);
-          setTwitterEmbeds(twitter.data.converters);
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to load config", error);
-      });
+    invoke<SourcesConfig>("get_state")
+      .then((data) => setConfig(data))
+      .catch(console.error);
   }, []);
 
-  const handleToggle = (checked: boolean) => {
-    setToggleEnabled(checked);
+  const handleToggle = async (enabled: boolean) => {
+    if (!config) return;
 
-    // Update backend immediately
-    invoke("update_config", {
-      platform: "twitter",
-      enabled: checked,
-      selectedConverter: selectedConverter,
-    }).catch((error) => {
-      console.error("Failed to update config:", error);
-    });
+    await invoke("toggle_platform", { platform: "twitter", enabled });
+    const updated = await invoke<SourcesConfig>("get_state");
+    setConfig(updated);
   };
 
-  const handleDropdownSelect = (selected: string) => {
-    setSelectedConverter(selected);
+  const handleDropdownSelect = async (selected: string) => {
+    if (!config) return;
 
-    // Update backend immediately
-    invoke("update_config", {
-      platform: "twitter",
-      enabled: toggleEnabled,
-      selectedConverter: selected,
-    }).catch((error) => {
-      console.error("Failed to update config:", error);
-    });
+    try {
+      
+      await invoke("select_converter", {
+        platform: "twitter",
+        converterName: selected,
+      });
+      const updated = await invoke<SourcesConfig>("get_state");
+      setConfig(updated);
+    } catch (error) {
+      console.error("Failed to select converter:", error);
+    }
   };
+
+  const twitter = config?.sources.find((s) => s.platform === "twitter");
 
   return (
     <>
@@ -71,18 +60,24 @@ const TwitterContent = () => {
       </h1>
 
       <ContentContainer>
-        <ToggleSwitch
-          id="toggle-twitter"
-          label="Enable"
-          checked={toggleEnabled}
-          onChange={handleToggle}
-        />
-        <DropdownMenu
-          label="Converter Source"
-          options={twitterEmbeds}
-          onSelect={handleDropdownSelect}
-          selected={selectedConverter}
-        />
+        {twitter && (
+          <>
+            <ToggleSwitch
+              id="toggle-twitter"
+              label="Enable"
+              platform="twitter"
+              initialChecked={twitter.data.enabled}
+              onToggle={handleToggle}
+            />
+            <DropdownMenu
+              label="Converter Source"
+              options={twitter.data.converters}
+              platform="twitter"
+              selected={twitter.data.selected}
+              onSelect={handleDropdownSelect}
+            />
+          </>
+        )}
       </ContentContainer>
     </>
   );

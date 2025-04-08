@@ -1,6 +1,7 @@
 use config::app_config::{Platform, PlatformSource};
+use ::config::Source;
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-use tauri;
+use tauri::{self, AppHandle, Listener};
 mod config;
 mod handlers;
 pub mod services;
@@ -11,7 +12,9 @@ use crate::services::clipboard::ClipboardManager;
 use crate::tray_menu::menu::{create_menu, create_tray};
 use once_cell::sync::Lazy;
 use std::path::Path;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
 use tauri::Manager;
 
 // use handlers::handle_menu_event;
@@ -32,68 +35,83 @@ fn get_config() -> SourcesConfig {
 }
 
 #[tauri::command]
-fn update_config(
+fn update_config(state_manager: tauri::State<StateManager>) -> Result<(), String> {
+    state_manager.save_to_file();
+    Ok(())
+}
+
+#[tauri::command]
+fn get_state(state_manager: tauri::State<StateManager>) -> SourcesConfig {
+    state_manager.get_state()
+}
+
+#[tauri::command]
+fn toggle_platform(
     platform: String,
     enabled: bool,
-    selected_converter: Option<String>,
-    app: tauri::AppHandle,
+    state_manager: tauri::State<StateManager>,
 ) -> Result<(), String> {
-    let mut config = CONFIG.lock().unwrap();
+    state_manager.update_state(|state| {
+        let platform_enum = match platform.to_lowercase().as_str() {
+            "twitter" => Platform::Twitter,
+            "bluesky" => Platform::Bluesky,
+            _ => return,
+        };
 
-    let platform_enum = match platform.to_lowercase().as_str() {
-        "twitter" => Platform::Twitter,
-        "bluesky" => Platform::Bluesky,
-        _ => return Err(format!("Unknown platform: {}", platform)),
-    };
-
-    for source in &mut config.sources {
-        match (source, &platform_enum) {
-            (PlatformSource::Twitter(data), Platform::Twitter) => {
-                data.enabled = enabled;
-                if let Some(converter) = selected_converter.clone() {
-                    if let Some(found) = data
-                        .converters
-                        .iter()
-                        .find(|c| format!("{:?}", c).to_lowercase() == converter.to_lowercase())
-                    {
-                        data.selected = Some(found.clone());
-                    } else {
-                        return Err(format!(
-                            "Selected converter '{}' not found in Twitter converters",
-                            converter
-                        ));
-                    }
+        for source in &mut state.sources {
+            match (source, &platform_enum) {
+                (PlatformSource::Twitter(data), Platform::Twitter) => {
+                    data.enabled = enabled;
                 }
-            }
-            (PlatformSource::Bluesky(data), Platform::Bluesky) => {
-                data.enabled = enabled;
-                if let Some(converter) = selected_converter.clone() {
-                    if let Some(found) = data
-                        .converters
-                        .iter()
-                        .find(|c| format!("{:?}", c).to_lowercase() == converter.to_lowercase())
-                    {
-                        data.selected = Some(found.clone());
-                    } else {
-                        return Err(format!(
-                            "Selected converter '{}' not found in Bluesky converters",
-                            converter
-                        ));
-                    }
+                (PlatformSource::Bluesky(data), Platform::Bluesky) => {
+                    data.enabled = enabled;
                 }
+                _ => {}
             }
-            _ => {}
         }
-    }
+    });
 
-    let appdata_path = app.path().app_data_dir().expect("Failed to get app data path");
+    Ok(())
+}
 
-    let config_path = appdata_path.join("config.yaml");
-    config.save_to_file(
-        config_path
-            .to_str()
-            .expect("Failed to convert path to string"),
-    ); // Save immediately
+#[tauri::command]
+fn select_converter(
+    platform: String,
+    converter_name: String,
+    state_manager: tauri::State<StateManager>,
+) -> Result<(), String> {
+    println!("select_converter called with platform: {}, converter_name: {}", platform, converter_name);
+
+    state_manager.update_state(|state| {
+        let platform_enum = match platform.to_lowercase().as_str() {
+            "twitter" => Platform::Twitter,
+            "bluesky" => Platform::Bluesky,
+            _ => return,
+        };
+
+        for source in &mut state.sources {
+            match (source, &platform_enum) {
+                (PlatformSource::Twitter(data), Platform::Twitter) => {
+                    if let Some(found) = data.converters.iter().find(|c| {
+                        format!("{:?}", c).to_lowercase() == converter_name.to_lowercase()
+                    }) {
+                        data.selected = Some(found.clone());
+                    }
+                }
+                (PlatformSource::Bluesky(data), Platform::Bluesky) => {
+                    if let Some(found) = data.converters.iter().find(|c| {
+                        format!("{:?}", c).to_lowercase() == converter_name.to_lowercase()
+                    }) {
+                        data.selected = Some(found.clone());
+                    }
+                }
+                _ => {}
+            }
+        }
+    });
+
+    state_manager.save_to_file();
+
     Ok(())
 }
 
@@ -127,6 +145,123 @@ impl MenuId {
     }
 }
 
+pub struct StateManager {
+    state: Arc<Mutex<SourcesConfig>>,
+    config_path: String,
+}
+
+impl StateManager {
+    pub fn new(config_path: String) -> Self {
+        let state = SourcesConfig::from_file_or_default(&config_path).expect("Failed to load config");
+
+        Self {
+            state: Arc::new(Mutex::new(state)),
+            config_path,
+        }
+    }
+
+    pub fn get_state(&self) -> SourcesConfig {
+        self.state.lock().unwrap().clone()
+    }
+
+    pub fn update_state<F>(&self, update_fn: F)
+    where
+        F: FnOnce(&mut SourcesConfig),
+    {
+        let mut state = self.state.lock().unwrap();
+        update_fn(&mut state);
+    }
+
+    pub fn save_to_file(&self) {
+        let state = self.state.lock().unwrap();
+        state.save_to_file(&self.config_path);
+    }
+
+    pub fn start_periodic_save(&self) {
+        let state = Arc::clone(&self.state);
+        let config_path = self.config_path.clone();
+        thread::spawn(move || {
+            loop {
+                thread::sleep(Duration::from_secs(60)); // Save every 60 seconds
+                let state = state.lock().unwrap();
+                state.save_to_file(&config_path);
+            }
+        });
+    }
+}
+
+#[tauri::command]
+fn update_state(
+    platform: String,
+    enabled: bool,
+    selected_converter: Option<String>,
+    state_manager: tauri::State<StateManager>,
+) -> Result<(), String> {
+    state_manager.update_state(|state| {
+        let platform_enum = match platform.to_lowercase().as_str() {
+            "twitter" => Platform::Twitter,
+            "bluesky" => Platform::Bluesky,
+            _ => return,
+        };
+
+        for source in &mut state.sources {
+            match (source, &platform_enum) {
+                (PlatformSource::Twitter(data), Platform::Twitter) => {
+                    data.enabled = enabled;
+                    if let Some(converter) = selected_converter.clone() {
+                        if let Some(found) = data.converters.iter().find(|c| {
+                            format!("{:?}", c).to_lowercase() == converter.to_lowercase()
+                        }) {
+                            data.selected = Some(found.clone());
+                        }
+                    }
+                }
+                (PlatformSource::Bluesky(data), Platform::Bluesky) => {
+                    data.enabled = enabled;
+                    if let Some(converter) = selected_converter.clone() {
+                        if let Some(found) = data.converters.iter().find(|c| {
+                            format!("{:?}", c).to_lowercase() == converter.to_lowercase()
+                        }) {
+                            data.selected = Some(found.clone());
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    });
+
+    Ok(())
+}
+
+fn setup_app_exit_handler(app: &AppHandle) {
+    let app_handle = app.clone();
+    let window = app.get_webview_window("main").expect("Failed to get main window");
+
+    window.on_window_event(move |event| {
+        if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+            println!("Saving config before exit...");
+
+            let state_manager = app_handle.state::<StateManager>();
+
+            // Block closing temporarily
+            api.prevent_close();
+
+            // Save the state
+            state_manager.save_to_file();
+
+            // Optional sleep if you want absolute guarantee
+            std::thread::sleep(std::time::Duration::from_millis(100));
+
+            // 👇 Correct safe way to close:
+            app_handle.exit(0);
+        }
+    });
+}
+
+
+
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -148,6 +283,11 @@ pub fn run() {
 
             let config_path = appdata_path.join("config.yaml");
 
+            let state_manager = StateManager::new(config_path.display().to_string());
+            state_manager.start_periodic_save();
+
+            app.manage(state_manager);
+
             // Load or create the configuration
             let config = SourcesConfig::from_file_or_default(
                 config_path
@@ -157,6 +297,9 @@ pub fn run() {
             .expect("Failed to load or create configuration file");
             *CONFIG.lock().unwrap() = config;
 
+            // Initialize the exit handler
+            setup_app_exit_handler(&handle);
+
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
@@ -165,6 +308,10 @@ pub fn run() {
             greet_from_app,
             get_config,
             update_config,
+            get_state,
+            update_state,
+            toggle_platform,
+            select_converter,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,19 +1,23 @@
 import React, { useState, useEffect, useRef } from "react";
+import { invoke } from "@tauri-apps/api/core";
 
 interface DropdownProps {
   options: string[];
   label?: string;
   selected?: string | null;
-  onSelect?: (selected: string) => void;
+  platform: string; // Platform name (e.g., "twitter", "bluesky")
+  onSelect?: (selected: string) => void; // Optional callback for additional actions
 }
 
 const DropdownMenu: React.FC<DropdownProps> = ({
   options,
   label,
   selected,
+  platform,
   onSelect,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [currentSelection, setCurrentSelection] = useState<string | null>(selected || null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleToggle = () => {
@@ -21,8 +25,10 @@ const DropdownMenu: React.FC<DropdownProps> = ({
   };
 
   const handleSelect = (option: string) => {
-    onSelect?.(option);
+    setCurrentSelection(option);
     setIsOpen(false);
+  
+    onSelect?.(option);
   };
 
   const handleClickOutside = (event: MouseEvent) => {
@@ -51,7 +57,7 @@ const DropdownMenu: React.FC<DropdownProps> = ({
           onClick={handleToggle}
           className="inline-flex justify-between w-full rounded-md border border-gray-600 shadow-sm px-4 py-2 bg-appbg text-sm font-medium text-gray-300 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
-          {selected || "Select an option"}
+          {currentSelection || "Select an option"}
           <svg
             className={`-mr-1 ml-2 h-5 w-5 transform transition-transform ${
               isOpen ? "rotate-180" : "rotate-0"

@@ -1,26 +1,44 @@
-import React from "react";
+import React, { useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 
 interface ToggleSwitchProps {
   id: string;
   label?: string;
-  checked?: boolean;
+  platform: string; // Platform name (e.g., "twitter", "bluesky")
+  initialChecked?: boolean; // Initial state of the toggle
   disabled?: boolean;
-  onChange?: (checked: boolean) => void;
   className?: string;
+  onToggle?: (enabled: boolean) => void; // Callback for toggle state changes
 }
 
 export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   id,
   label,
-  checked = false,
+  platform,
+  initialChecked = false,
   disabled = false,
-  onChange,
   className = "",
+  onToggle,
 }) => {
+  const [checked, setChecked] = useState(initialChecked);
 
-  const handleToggle = () => {
+  const handleToggle = async () => {
     if (disabled) return;
-    onChange?.(!checked);  // <- TRUST the "checked" prop, not internal state
+
+    const newChecked = !checked;
+    setChecked(newChecked);
+
+    try {
+      // Call the backend to update the platform's enabled state
+      await invoke("toggle_platform", { platform, enabled: newChecked });
+      console.log(`${platform} is now ${newChecked ? "enabled" : "disabled"}`);
+      // Call the onToggle callback if provided
+      onToggle?.(newChecked);
+    } catch (error) {
+      console.error("Failed to toggle platform:", error);
+      // Revert the toggle state in case of an error
+      setChecked(!newChecked);
+    }
   };
 
   return (
