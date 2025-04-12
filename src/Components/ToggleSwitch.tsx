@@ -1,30 +1,33 @@
-import React, { useState } from "react";
+import React from "react";
+import { invoke } from "@tauri-apps/api/core";
 
 interface ToggleSwitchProps {
   id: string;
   label?: string;
-  checked?: boolean;
+  platform: string;
+  initialChecked: boolean;
   disabled?: boolean;
-  onChange?: (checked: boolean) => void;
   className?: string;
+  onToggle?: (enabled: boolean) => void;
 }
 
 export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   id,
   label,
-  checked = false,
+  platform,
+  initialChecked,
   disabled = false,
-  onChange,
   className = "",
+  onToggle,
 }) => {
-  const [isChecked, setIsChecked] = useState<boolean>(checked);
-
-  const handleToggle = () => {
+  const handleToggle = async () => {
     if (disabled) return;
 
-    const newChecked = !isChecked;
-    setIsChecked(newChecked);
-    onChange?.(newChecked);
+    try {
+      await onToggle?.(!initialChecked);
+    } catch (error) {
+      console.error("Failed to toggle:", error);
+    }
   };
 
   return (
@@ -38,16 +41,16 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
         id={id}
         type="button"
         role="switch"
-        aria-checked={isChecked}
+        aria-checked={initialChecked}
         disabled={disabled}
         onClick={handleToggle}
         className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-150 border-1 border-appbg hover:border-blue-200
-          ${isChecked ? "bg-blue-600" : "bg-appbg"}
+          ${initialChecked ? "bg-blue-600" : "bg-appbg"}
           ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
       >
         <div
           className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-150
-            ${isChecked ? "translate-x-6" : "translate-x-0"}`}
+            ${initialChecked ? "translate-x-6" : "translate-x-0"}`}
         />
       </button>
     </div>

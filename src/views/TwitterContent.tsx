@@ -1,30 +1,17 @@
-import { useEffect, useState } from "react";
-import sources from "../converter-sources.json";
-import Card from "../Components/Card";
+import { usePlatform } from "../hooks/usePlatform";
 import ContentContainer from "../Components/ContentContainer";
-import { invoke } from "@tauri-apps/api/core";
 import ToggleSwitch from "../Components/ToggleSwitch";
 import DropdownMenu from "../Components/DropdownMenu";
+import ConversionNotification from "../Components/ConversionNotification";
 
 const TwitterContent = () => {
-  const twitterSources = sources.sources.find(
-    (source) => source.platform === "twitter"
-  );
-  const twitterEmbeds = twitterSources?.embeds || [];
-
-  const [toggleEnabled, setToggleEnabled] = useState(false);
-  const [selectedConverter, setSelectedConverter] = useState<string | null>(
-    null
-  );
-
-  const handleToggle = (checked: boolean) => {
-    setToggleEnabled(checked);
-  };
-
-  // Handle dropdown selection changes
-  const handleDropdownSelect = (selected: string) => {
-    setSelectedConverter(selected);
-  };
+  const {
+    platformData,
+    lastConversion,
+    showNotification,
+    handleToggle,
+    handleDropdownSelect,
+  } = usePlatform("twitter");
 
   return (
     <>
@@ -33,17 +20,27 @@ const TwitterContent = () => {
       </h1>
 
       <ContentContainer>
-        <ToggleSwitch
-          id="toggle-twitter"
-          label="Enable"
-          checked={toggleEnabled}
-          onChange={handleToggle}
-        />
-        <DropdownMenu label="Converter Source" options={twitterEmbeds} onSelect={handleDropdownSelect} selected={selectedConverter} />
+        {platformData && (
+          <>
+            <ToggleSwitch
+              id="toggle-twitter"
+              label="Enable"
+              platform="twitter"
+              initialChecked={platformData.enabled}
+              onToggle={handleToggle}
+            />
+            <DropdownMenu
+              label="Converter Source"
+              options={platformData.converters}
+              platform="twitter"
+              selected={platformData.selected}
+              onSelect={handleDropdownSelect}
+            />
+            
+            <ConversionNotification show={showNotification} conversion={lastConversion} />
+          </>
+        )}
       </ContentContainer>
-      {/* <div className="flex justify-center">
-        <div className="border-b-1 border-gray-700/50 w-3/4"></div>
-      </div> */}
     </>
   );
 };
