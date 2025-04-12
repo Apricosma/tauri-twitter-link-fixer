@@ -1,7 +1,6 @@
 use config::app_config::{Platform, PlatformSource};
-use ::config::Source;
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-use tauri::{self, AppHandle, Emitter, Listener};
+use tauri::{self, AppHandle, Emitter};
 mod config;
 mod handlers;
 pub mod services;
@@ -9,9 +8,9 @@ mod tray_menu;
 
 use crate::config::app_config::SourcesConfig;
 use crate::services::clipboard::ClipboardManager;
+use crate::services::link_converter::LinkConverter;
 use crate::tray_menu::menu::{create_menu, create_tray};
 use once_cell::sync::Lazy;
-use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
@@ -115,10 +114,10 @@ fn select_converter(
     Ok(())
 }
 
-// Create a new clipboard manager instance
+// Create static instances
 static CLIPBOARD_MANAGER: Lazy<Mutex<ClipboardManager>> =
     Lazy::new(|| Mutex::new(ClipboardManager::new()));
-
+static LINK_CONVERTER: Lazy<LinkConverter> = Lazy::new(|| LinkConverter::new());
 static CONFIG: Lazy<Mutex<SourcesConfig>> = Lazy::new(|| Mutex::new(SourcesConfig::default()));
 
 #[derive(Debug)]
@@ -245,6 +244,94 @@ fn update_state(
     Ok(())
 }
 
+#[tauri::command]
+fn start_clipboard_monitor(state_manager: tauri::State<StateManager>) -> Result<(), String> {
+    let app_handle = state_manager.app.clone();
+    
+    thread::spawn(move || {
+        loop {
+            thread::sleep(Duration::from_millis(500));
+            
+            let content = {
+                // Minimize lock scope for initial clipboard check
+                let mut clipboard_manager = match CLIPBOARD_MANAGER.lock() {
+                    Ok(manager) => manager,
+                    Err(e) => {
+                        eprintln!("Failed to lock clipboard manager: {}", e);
+                        continue;
+                    }
+                };
+
+                match clipboard_manager.get_clipboard_content() {
+                    Ok(content) => {
+                        if let Ok(false) = clipboard_manager.has_clipboard_changed() {
+                            continue;
+                        }
+                        content
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to get clipboard content: {}", e);
+                        continue;
+                    }
+                }
+            }; // Lock is released here
+
+            // Check if it's a Twitter/X link and get state outside of lock
+            let state_manager = app_handle.state::<StateManager>();
+            let state = state_manager.get_state();
+            
+            if let Some(PlatformSource::Twitter(twitter_data)) = state.sources.iter().find(|s| {
+                matches!(s, PlatformSource::Twitter(_))
+            }) {
+                if twitter_data.enabled {
+                    if let Some(selected) = &twitter_data.selected {
+                        if let Some(converted) = LINK_CONVERTER.convert_twitter_link(&content, selected) {
+                            // Only take the lock again when we need to update the clipboard
+                            if let Ok(mut clipboard_manager) = CLIPBOARD_MANAGER.lock() {
+                                if let Err(e) = clipboard_manager.set_clipboard_content(&converted) {
+                                    eprintln!("Failed to set clipboard content: {}", e);
+                                    continue;
+                                }
+
+                                // Use the original content when emitting the event
+                                let original = content.clone();
+                                // Emit event to notify frontend
+                                if let Err(e) = app_handle.emit("link-converted", 
+                                    serde_json::json!({
+                                        "original": original,
+                                        "converted": converted
+                                    })
+                                ) {
+                                    eprintln!("Failed to emit conversion event: {}", e);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    Ok(())
+}
+
+#[tauri::command]
+fn convert_link(url: String, state_manager: tauri::State<StateManager>) -> Result<String, String> {
+    let state = state_manager.get_state();
+    
+    if let Some(PlatformSource::Twitter(twitter_data)) = state.sources.iter().find(|s| {
+        matches!(s, PlatformSource::Twitter(_))
+    }) {
+        if let Some(selected) = &twitter_data.selected {
+            if let Some(converted) = LINK_CONVERTER.convert_twitter_link(&url, selected) {
+                return Ok(converted);
+            }
+        }
+    }
+    
+    Err("Unable to convert link".to_string())
+}
+
 fn setup_app_exit_handler(app: &AppHandle) {
     let app_handle = app.clone();
     let window = app.get_webview_window("main").expect("Failed to get main window");
@@ -311,6 +398,10 @@ pub fn run() {
             // Initialize the exit handler
             setup_app_exit_handler(&handle);
 
+            // Start clipboard monitoring
+            let state_manager = app.state::<StateManager>();
+            start_clipboard_monitor(state_manager)?;
+
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
@@ -323,6 +414,8 @@ pub fn run() {
             update_state,
             toggle_platform,
             select_converter,
+            convert_link,
+            start_clipboard_monitor,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

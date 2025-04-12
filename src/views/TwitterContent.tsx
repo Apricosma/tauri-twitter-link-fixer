@@ -18,24 +18,41 @@ interface PlatformSource {
   };
 }
 
+interface ConversionEvent {
+  original: string;
+  converted: string;
+}
+
 const TwitterContent = () => {
   const [config, setConfig] = useState<SourcesConfig | null>(null);
+  const [lastConversion, setLastConversion] = useState<ConversionEvent | null>(null);
+  const [showNotification, setShowNotification] = useState(false);
 
-  // Set up event listener and fetch initial state
   useEffect(() => {
     // Fetch initial state
     invoke<SourcesConfig>("get_state")
       .then((data) => setConfig(data))
       .catch(console.error);
 
+    // Start clipboard monitoring
+    invoke("start_clipboard_monitor").catch(console.error);
+
     // Listen for state changes
-    const unlisten = listen<SourcesConfig>("state-changed", (event) => {
+    const stateUnlisten = listen<SourcesConfig>("state-changed", (event) => {
       setConfig(event.payload);
     });
 
-    // Cleanup listener on unmount
+    // Listen for link conversions
+    const conversionUnlisten = listen<ConversionEvent>("link-converted", (event) => {
+      setLastConversion(event.payload);
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3000); // Hide after 3 seconds
+    });
+
+    // Cleanup listeners on unmount
     return () => {
-      unlisten.then(fn => fn());
+      stateUnlisten.then(fn => fn());
+      conversionUnlisten.then(fn => fn());
     };
   }, []);
 
@@ -44,7 +61,6 @@ const TwitterContent = () => {
 
     try {
       await invoke("toggle_platform", { platform: "twitter", enabled });
-      // State will be updated via event listener
     } catch (error) {
       console.error("Failed to toggle platform:", error);
     }
@@ -58,7 +74,6 @@ const TwitterContent = () => {
         platform: "twitter",
         converterName: selected,
       });
-      // State will be updated via event listener
     } catch (error) {
       console.error("Failed to select converter:", error);
     }
@@ -89,6 +104,27 @@ const TwitterContent = () => {
               selected={twitter.data.selected}
               onSelect={handleDropdownSelect}
             />
+            
+            {/* Notification toast */}
+            {showNotification && lastConversion && (
+              <div className="fixed bottom-4 right-4 bg-appforeground text-gray-100 p-4 rounded-lg shadow-lg transition-opacity duration-300 max-w-2xl border border-gray-700">
+                <div className="font-bold mb-2 text-red-400">Link Converted!</div>
+                <div className="text-sm opacity-90 space-y-2">
+                  <div>
+                    <div className="font-semibold mb-1">From ({new URL(lastConversion.original).hostname}):</div>
+                    <div className="bg-appbg/50 p-2 rounded break-all">
+                      {lastConversion.original}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-semibold mb-1">To ({new URL(lastConversion.converted).hostname}):</div>
+                    <div className="bg-appbg/50 p-2 rounded break-all">
+                      {lastConversion.converted}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
       </ContentContainer>
