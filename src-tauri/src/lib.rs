@@ -1,4 +1,4 @@
-use config::app_config::{Platform, PlatformSource};
+use config::app_config::{Platform, PlatformConverters, PlatformSource};
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use tauri::{self, AppHandle, Emitter};
 mod config;
@@ -252,61 +252,42 @@ fn start_clipboard_monitor(state_manager: tauri::State<StateManager>) -> Result<
         loop {
             thread::sleep(Duration::from_millis(500));
             
-            let content = {
-                // Minimize lock scope for initial clipboard check
-                let mut clipboard_manager = match CLIPBOARD_MANAGER.lock() {
-                    Ok(manager) => manager,
-                    Err(e) => {
-                        eprintln!("Failed to lock clipboard manager: {}", e);
-                        continue;
-                    }
-                };
-
-                match clipboard_manager.get_clipboard_content() {
-                    Ok(content) => {
-                        if let Ok(false) = clipboard_manager.has_clipboard_changed() {
-                            continue;
-                        }
-                        content
-                    }
-                    Err(e) => {
-                        eprintln!("Failed to get clipboard content: {}", e);
-                        continue;
-                    }
+            // Get clipboard content if changed
+            let content = match get_new_clipboard_content() {
+                Ok(Some(content)) => content,
+                Ok(None) => continue, // No changes
+                Err(e) => {
+                    eprintln!("Clipboard error: {}", e);
+                    continue;
                 }
-            }; // Lock is released here
+            };
 
-            // Check if it's a Twitter/X link and get state outside of lock
-            let state_manager = app_handle.state::<StateManager>();
-            let state = state_manager.get_state();
+            let state = app_handle.state::<StateManager>().get_state();
             
-            if let Some(PlatformSource::Twitter(twitter_data)) = state.sources.iter().find(|s| {
-                matches!(s, PlatformSource::Twitter(_))
-            }) {
-                if twitter_data.enabled {
-                    if let Some(selected) = &twitter_data.selected {
-                        if let Some(converted) = LINK_CONVERTER.convert_twitter_link(&content, selected) {
-                            // Only take the lock again when we need to update the clipboard
-                            if let Ok(mut clipboard_manager) = CLIPBOARD_MANAGER.lock() {
-                                if let Err(e) = clipboard_manager.set_clipboard_content(&converted) {
-                                    eprintln!("Failed to set clipboard content: {}", e);
-                                    continue;
+            // Try each platform's conversion
+            for source in state.sources.iter() {
+                match source {
+                    PlatformSource::Twitter(data) if data.enabled => {
+                        if let Some(selected) = &data.selected {
+                            if let Some(converted) = LINK_CONVERTER.convert_link(&content, "twitter", &format!("{:?}", selected).to_lowercase()) {
+                                if let Err(e) = update_clipboard_and_notify(&app_handle, &content, &converted) {
+                                    eprintln!("Failed to update clipboard: {}", e);
                                 }
-
-                                // Use the original content when emitting the event
-                                let original = content.clone();
-                                // Emit event to notify frontend
-                                if let Err(e) = app_handle.emit("link-converted", 
-                                    serde_json::json!({
-                                        "original": original,
-                                        "converted": converted
-                                    })
-                                ) {
-                                    eprintln!("Failed to emit conversion event: {}", e);
-                                }
+                                break;
                             }
                         }
-                    }
+                    },
+                    PlatformSource::Bluesky(data) if data.enabled => {
+                        if let Some(selected) = &data.selected {
+                            if let Some(converted) = LINK_CONVERTER.convert_link(&content, "bluesky", &format!("{:?}", selected).to_lowercase()) {
+                                if let Err(e) = update_clipboard_and_notify(&app_handle, &content, &converted) {
+                                    eprintln!("Failed to update clipboard: {}", e);
+                                }
+                                break;
+                            }
+                        }
+                    },
+                    _ => continue,
                 }
             }
         }
@@ -315,17 +296,77 @@ fn start_clipboard_monitor(state_manager: tauri::State<StateManager>) -> Result<
     Ok(())
 }
 
+fn get_new_clipboard_content() -> Result<Option<String>, String> {
+    let mut clipboard_manager = CLIPBOARD_MANAGER
+        .lock()
+        .map_err(|e| format!("Failed to lock clipboard manager: {}", e))?;
+
+    let content = clipboard_manager
+        .get_clipboard_content()
+        .map_err(|e| format!("Failed to get clipboard content: {}", e))?;
+
+    if clipboard_manager
+        .has_clipboard_changed()
+        .map_err(|e| format!("Failed to check clipboard changes: {}", e))? {
+        Ok(Some(content))
+    } else {
+        Ok(None)
+    }
+}
+
+fn get_twitter_config(state: &SourcesConfig) -> Option<&PlatformConverters<config::app_config::TwitterConverters>> {
+    state.sources.iter()
+        .find(|s| matches!(s, PlatformSource::Twitter(_)))
+        .and_then(|s| match s {
+            PlatformSource::Twitter(data) => Some(data),
+            _ => None,
+        })
+}
+
+fn update_clipboard_and_notify(app_handle: &AppHandle, original: &str, converted: &str) -> Result<(), String> {
+    let mut clipboard_manager = CLIPBOARD_MANAGER
+        .lock()
+        .map_err(|e| format!("Failed to lock clipboard manager: {}", e))?;
+
+    clipboard_manager
+        .set_clipboard_content(converted)
+        .map_err(|e| format!("Failed to set clipboard content: {}", e))?;
+
+    app_handle
+        .emit(
+            "link-converted",
+            serde_json::json!({
+                "original": original,
+                "converted": converted
+            }),
+        )
+        .map_err(|e| format!("Failed to emit conversion event: {}", e))?;
+
+    Ok(())
+}
+
 #[tauri::command]
 fn convert_link(url: String, state_manager: tauri::State<StateManager>) -> Result<String, String> {
     let state = state_manager.get_state();
     
-    if let Some(PlatformSource::Twitter(twitter_data)) = state.sources.iter().find(|s| {
-        matches!(s, PlatformSource::Twitter(_))
-    }) {
-        if let Some(selected) = &twitter_data.selected {
-            if let Some(converted) = LINK_CONVERTER.convert_twitter_link(&url, selected) {
-                return Ok(converted);
-            }
+    // Try each platform's conversion
+    for source in state.sources.iter() {
+        match source {
+            PlatformSource::Twitter(data) if data.enabled => {
+                if let Some(selected) = &data.selected {
+                    if let Some(converted) = LINK_CONVERTER.convert_link(&url, "twitter", &format!("{:?}", selected).to_lowercase()) {
+                        return Ok(converted);
+                    }
+                }
+            },
+            PlatformSource::Bluesky(data) if data.enabled => {
+                if let Some(selected) = &data.selected {
+                    if let Some(converted) = LINK_CONVERTER.convert_link(&url, "bluesky", &format!("{:?}", selected).to_lowercase()) {
+                        return Ok(converted);
+                    }
+                }
+            },
+            _ => continue,
         }
     }
     
