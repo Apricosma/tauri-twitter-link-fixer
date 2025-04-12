@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import ContentContainer from "../Components/ContentContainer";
 import ToggleSwitch from "../Components/ToggleSwitch";
 import DropdownMenu from "../Components/DropdownMenu";
@@ -20,32 +21,44 @@ interface PlatformSource {
 const TwitterContent = () => {
   const [config, setConfig] = useState<SourcesConfig | null>(null);
 
-  // Fetch from backend on mount
+  // Set up event listener and fetch initial state
   useEffect(() => {
+    // Fetch initial state
     invoke<SourcesConfig>("get_state")
       .then((data) => setConfig(data))
       .catch(console.error);
+
+    // Listen for state changes
+    const unlisten = listen<SourcesConfig>("state-changed", (event) => {
+      setConfig(event.payload);
+    });
+
+    // Cleanup listener on unmount
+    return () => {
+      unlisten.then(fn => fn());
+    };
   }, []);
 
   const handleToggle = async (enabled: boolean) => {
     if (!config) return;
 
-    await invoke("toggle_platform", { platform: "twitter", enabled });
-    const updated = await invoke<SourcesConfig>("get_state");
-    setConfig(updated);
+    try {
+      await invoke("toggle_platform", { platform: "twitter", enabled });
+      // State will be updated via event listener
+    } catch (error) {
+      console.error("Failed to toggle platform:", error);
+    }
   };
 
   const handleDropdownSelect = async (selected: string) => {
     if (!config) return;
 
     try {
-      
       await invoke("select_converter", {
         platform: "twitter",
         converterName: selected,
       });
-      const updated = await invoke<SourcesConfig>("get_state");
-      setConfig(updated);
+      // State will be updated via event listener
     } catch (error) {
       console.error("Failed to select converter:", error);
     }

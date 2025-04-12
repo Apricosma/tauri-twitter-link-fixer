@@ -1,7 +1,7 @@
 use config::app_config::{Platform, PlatformSource};
 use ::config::Source;
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-use tauri::{self, AppHandle, Listener};
+use tauri::{self, AppHandle, Emitter, Listener};
 mod config;
 mod handlers;
 pub mod services;
@@ -148,15 +148,17 @@ impl MenuId {
 pub struct StateManager {
     state: Arc<Mutex<SourcesConfig>>,
     config_path: String,
+    app: AppHandle,
 }
 
 impl StateManager {
-    pub fn new(config_path: String) -> Self {
+    pub fn new(config_path: String, app: AppHandle) -> Self {
         let state = SourcesConfig::from_file_or_default(&config_path).expect("Failed to load config");
 
         Self {
             state: Arc::new(Mutex::new(state)),
             config_path,
+            app,
         }
     }
 
@@ -168,8 +170,16 @@ impl StateManager {
     where
         F: FnOnce(&mut SourcesConfig),
     {
-        let mut state = self.state.lock().unwrap();
-        update_fn(&mut state);
+        let mut state_guard = self.state.lock().unwrap();
+        update_fn(&mut state_guard);
+        // Clone the state while holding the lock to avoid deadlock
+        let state_clone = state_guard.clone();
+        // Drop the lock before emitting
+        drop(state_guard);
+        // Emit state change event with the cloned state
+        if let Err(e) = self.app.emit("state-changed", state_clone) {
+            eprintln!("Failed to emit state change: {}", e);
+        }
     }
 
     pub fn save_to_file(&self) {
@@ -182,9 +192,10 @@ impl StateManager {
         let config_path = self.config_path.clone();
         thread::spawn(move || {
             loop {
-                thread::sleep(Duration::from_secs(60)); // Save every 60 seconds
-                let state = state.lock().unwrap();
-                state.save_to_file(&config_path);
+                thread::sleep(Duration::from_secs(60));
+                if let Ok(state) = state.lock() {
+                    state.save_to_file(&config_path);
+                }
             }
         });
     }
@@ -283,7 +294,7 @@ pub fn run() {
 
             let config_path = appdata_path.join("config.yaml");
 
-            let state_manager = StateManager::new(config_path.display().to_string());
+            let state_manager = StateManager::new(config_path.display().to_string(), handle.clone());
             state_manager.start_periodic_save();
 
             app.manage(state_manager);
