@@ -1,4 +1,3 @@
-use crate::config::app_config::{TwitterConverters, BlueskyConverters};
 use regex::Regex;
 
 pub struct LinkConverter {
