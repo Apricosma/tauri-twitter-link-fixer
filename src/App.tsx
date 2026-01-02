@@ -4,6 +4,7 @@ import { AppSidebar } from "./components/AppSidebar";
 import ActiveViewContent from "./components/ActiveViewContent";
 import { ViewType } from "./components/ActiveViewContent";
 import { ThemeProvider } from "./components/theme-provider";
+import { Toaster } from "./components/ui/sonner";
 import {
   SidebarProvider,
   SidebarInset,
@@ -23,6 +24,7 @@ function App() {
           </main>
         </SidebarInset>
       </SidebarProvider>
+      <Toaster position="bottom-right" />
     </ThemeProvider>
   );
 }
