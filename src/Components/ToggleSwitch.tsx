@@ -1,5 +1,4 @@
 import React from "react";
-import { invoke } from "@tauri-apps/api/core";
 
 interface ToggleSwitchProps {
   id: string;
@@ -14,7 +13,6 @@ interface ToggleSwitchProps {
 export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   id,
   label,
-  platform,
   initialChecked,
   disabled = false,
   className = "",

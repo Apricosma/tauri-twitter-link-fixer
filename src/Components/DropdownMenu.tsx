@@ -12,7 +12,6 @@ const DropdownMenu: React.FC<DropdownProps> = ({
   options,
   label,
   selected,
-  platform,
   onSelect,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
