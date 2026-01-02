@@ -64,7 +64,9 @@ export function usePlatform(platformName: string) {
   };
 
   const handleDropdownSelect = async (selected: string) => {
-    if (!config) return;
+    if (!config) {
+      return;
+    }
 
     try {
       await invoke("select_converter", {

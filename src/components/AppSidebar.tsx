@@ -18,13 +18,15 @@ interface AppSidebarProps {
   setActiveView: (view: ViewType) => void;
 }
 
-// Menu items with their corresponding icons
-const items = [
-  {
-    title: "Home",
-    icon: Home,
-    view: ViewType.Home,
-  },
+// Home item separated from platforms
+const homeItem = {
+  title: "Home",
+  icon: Home,
+  view: ViewType.Home,
+};
+
+// Platform items without Home
+const platformItems = [
   {
     title: "Twitter",
     icon: Twitter,
@@ -62,23 +64,43 @@ export function AppSidebar({ activeView, setActiveView }: AppSidebarProps) {
         </div>
       </SidebarHeader>
       
-      <SidebarContent>
+      <SidebarContent className="gap-0">
+        <SidebarGroup className="pb-0">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  onClick={() => setActiveView(homeItem.view)}
+                  isActive={activeView === homeItem.view}
+                  tooltip={homeItem.title}
+                >
+                  <homeItem.icon />
+                  <span>{homeItem.title}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         <SidebarGroup>
           <SidebarGroupLabel>Platforms</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    onClick={() => setActiveView(item.view)}
-                    isActive={activeView === item.view}
-                    tooltip={item.title}
-                  >
-                    <item.icon />
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {platformItems.map((item) => {
+                const isActive = activeView === item.view;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton 
+                      onClick={() => setActiveView(item.view)}
+                      isActive={isActive}
+                      tooltip={item.title}
+                    >
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
