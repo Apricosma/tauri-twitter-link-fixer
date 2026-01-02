@@ -1,5 +1,13 @@
-import ToggleSwitch from "../ToggleSwitch";
-import DropdownMenu from "../DropdownMenu";
+import { Switch } from "../ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Label } from "../ui/label";
 
 interface PlatformSettingsProps {
   platform: string;
@@ -21,33 +29,44 @@ const PlatformSettings: React.FC<PlatformSettingsProps> = ({
   onDropdownSelect,
 }) => {
   return (
-    <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-      <h3 className="font-semibold mb-4">Platform Settings</h3>
-      <div className="space-y-4">
-        <ToggleSwitch
-          id={`toggle-${platform}`}
-          label={`Enable ${title} link conversion`}
-          platform={platform}
-          initialChecked={enabled}
-          onToggle={onToggle}
-        />
+    <Card className="gap-2">
+      <CardHeader>
+        <CardTitle className="border-b-1 pb-4">Platform Settings</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between space-x-2">
+          <Label htmlFor={`switch-${platform}`}>
+            Enable {title} link conversion
+          </Label>
+          <Switch
+            id={`switch-${platform}`}
+            checked={enabled}
+            onCheckedChange={(checked) => onToggle(platform, checked)}
+          />
+        </div>
 
         {enabled && (
-          <div className="pt-4 border-t">
-            <label className="text-sm font-medium mb-2 block">
-              Converter Service
-            </label>
-            <DropdownMenu
-              label="Select converter"
-              options={converters}
-              platform={platform}
-              selected={selected}
-              onSelect={onDropdownSelect}
-            />
+          <div className="space-y-2 flex justify-between">
+            <Label htmlFor={`select-${platform}`}>Converter Service</Label>
+            <Select
+              value={selected}
+              onValueChange={(value) => onDropdownSelect(platform, value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select converter" />
+              </SelectTrigger>
+              <SelectContent>
+                {converters.map((converter) => (
+                  <SelectItem key={converter} value={converter}>
+                    {converter}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

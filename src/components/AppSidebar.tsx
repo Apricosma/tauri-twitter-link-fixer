@@ -67,18 +67,21 @@ export function AppSidebar({ activeView, setActiveView }: AppSidebarProps) {
           <SidebarGroupLabel>Platforms</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    onClick={() => setActiveView(item.view)}
-                    isActive={activeView === item.view}
-                    tooltip={item.title}
-                  >
-                    <item.icon />
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {items.map((item) => {
+                const isActive = activeView === item.view;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton 
+                      onClick={() => setActiveView(item.view)}
+                      isActive={isActive}
+                      tooltip={item.title}
+                    >
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
