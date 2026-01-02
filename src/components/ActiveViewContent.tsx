@@ -37,7 +37,7 @@ const ActiveViewContent = ({ activeView }: ActiveViewContentProps) => {
   const ActiveComponent = useMemo(() => viewRegistry[activeView], [activeView]);
 
   return (
-    <div className="flex-1 rounded-lg border bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-hidden">
+    <div className="flex-1 h-full rounded-lg border bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-hidden border-b-0 rounded-bl-none rounded-br-none">
       <ActiveComponent />
     </div>
   );
