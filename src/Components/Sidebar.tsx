@@ -7,7 +7,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ items }) => {
   return (
     <div className="mt-5">
-      <aside className="fixed left w-64 h-9/10 bg-appbg text-white border-r-1 border-gray-700/50">
+      <aside className="fixed left w-64 h-9/10 bg-background text-foreground border-r-1 border-gray-700/50">
         <div className="pb-4 text-lg font-bold border-b border-gray-700/50 w-9/10 mx-auto">
           Twitter Link Fixer
         </div>
