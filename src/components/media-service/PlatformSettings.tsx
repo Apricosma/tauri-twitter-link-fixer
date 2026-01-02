@@ -16,7 +16,7 @@ interface PlatformSettingsProps {
   converters: any[];
   selected: string;
   onToggle: (platform: string, enabled: boolean) => void;
-  onDropdownSelect: (platform: string, selected: string) => void;
+  onDropdownSelect: (selected: string) => void;
 }
 
 const PlatformSettings: React.FC<PlatformSettingsProps> = ({
@@ -49,8 +49,10 @@ const PlatformSettings: React.FC<PlatformSettingsProps> = ({
           <div className="space-y-2 flex justify-between">
             <Label htmlFor={`select-${platform}`}>Converter Service</Label>
             <Select
-              value={selected}
-              onValueChange={(value) => onDropdownSelect(platform, value)}
+              value={selected || ""}
+              onValueChange={(value) => {
+                onDropdownSelect(value);
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select converter" />
