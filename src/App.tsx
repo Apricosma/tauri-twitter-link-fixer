@@ -18,9 +18,10 @@ function App() {
       <SidebarProvider>
         <AppSidebar activeView={activeView} setActiveView={setActiveView} />
         <SidebarInset>
-
-          <main className="flex flex-1 flex-col gap-4 p-4 pb-0 bg-background h-screen">
-            <ActiveViewContent activeView={activeView} />
+          <main className="flex flex-1 flex-col gap-4 p-4 pb-0 bg-background h-screen overflow-hidden">
+            <div className="flex-1 min-h-0">
+              <ActiveViewContent activeView={activeView} />
+            </div>
           </main>
         </SidebarInset>
       </SidebarProvider>
