@@ -18,6 +18,143 @@ use tauri::Manager;
 
 // use handlers::handle_menu_event;
 
+// Generic platform operations trait
+trait PlatformOperations {
+    fn is_enabled(&self) -> bool;
+    fn set_enabled(&mut self, enabled: bool);
+    fn get_selected_converter(&self) -> Option<String>;
+    fn set_converter_by_name(&mut self, converter_name: &str) -> bool;
+    fn try_convert_link(&self, link_converter: &LinkConverter, url: &str, platform_name: &str) -> Option<String>;
+}
+
+impl PlatformOperations for PlatformConverters<config::app_config::TwitterConverters> {
+    fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    fn set_enabled(&mut self, enabled: bool) {
+        self.enabled = enabled;
+    }
+
+    fn get_selected_converter(&self) -> Option<String> {
+        self.selected.as_ref().map(|c| format!("{:?}", c).to_lowercase())
+    }
+
+    fn set_converter_by_name(&mut self, converter_name: &str) -> bool {
+        if let Some(found) = self.converters.iter().find(|c| {
+            format!("{:?}", c).to_lowercase() == converter_name.to_lowercase()
+        }) {
+            self.selected = Some(found.clone());
+            true
+        } else {
+            false
+        }
+    }
+
+    fn try_convert_link(&self, link_converter: &LinkConverter, url: &str, platform_name: &str) -> Option<String> {
+        if self.enabled {
+            if let Some(selected) = &self.selected {
+                return link_converter.convert_link(url, platform_name, &format!("{:?}", selected).to_lowercase());
+            }
+        }
+        None
+    }
+}
+
+impl PlatformOperations for PlatformConverters<config::app_config::BlueskyConverters> {
+    fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    fn set_enabled(&mut self, enabled: bool) {
+        self.enabled = enabled;
+    }
+
+    fn get_selected_converter(&self) -> Option<String> {
+        self.selected.as_ref().map(|c| format!("{:?}", c).to_lowercase())
+    }
+
+    fn set_converter_by_name(&mut self, converter_name: &str) -> bool {
+        if let Some(found) = self.converters.iter().find(|c| {
+            format!("{:?}", c).to_lowercase() == converter_name.to_lowercase()
+        }) {
+            self.selected = Some(found.clone());
+            true
+        } else {
+            false
+        }
+    }
+
+    fn try_convert_link(&self, link_converter: &LinkConverter, url: &str, platform_name: &str) -> Option<String> {
+        if self.enabled {
+            if let Some(selected) = &self.selected {
+                return link_converter.convert_link(url, platform_name, &format!("{:?}", selected).to_lowercase());
+            }
+        }
+        None
+    }
+}
+
+// Helper methods for PlatformSource enum
+impl PlatformSource {
+    fn get_platform_type(&self) -> Platform {
+        match self {
+            PlatformSource::Twitter(_) => Platform::Twitter,
+            PlatformSource::Bluesky(_) => Platform::Bluesky,
+        }
+    }
+
+    fn get_platform_name(&self) -> &'static str {
+        match self {
+            PlatformSource::Twitter(_) => "twitter",
+            PlatformSource::Bluesky(_) => "bluesky",
+        }
+    }
+
+    fn get_operations_mut(&mut self) -> &mut dyn PlatformOperations {
+        match self {
+            PlatformSource::Twitter(data) => data,
+            PlatformSource::Bluesky(data) => data,
+        }
+    }
+
+    fn get_operations(&self) -> &dyn PlatformOperations {
+        match self {
+            PlatformSource::Twitter(data) => data,
+            PlatformSource::Bluesky(data) => data,
+        }
+    }
+
+    fn try_convert_link(&self, link_converter: &LinkConverter, url: &str) -> Option<String> {
+        self.get_operations().try_convert_link(link_converter, url, self.get_platform_name())
+    }
+}
+
+// Helper functions for generic platform operations
+fn parse_platform(platform_str: &str) -> Option<Platform> {
+    match platform_str.to_lowercase().as_str() {
+        "twitter" => Some(Platform::Twitter),
+        "bluesky" => Some(Platform::Bluesky),
+        _ => None,
+    }
+}
+
+fn with_platform_data<F, R>(state: &mut SourcesConfig, platform: Platform, operation: F) -> Option<R>
+where
+    F: FnOnce(&mut dyn PlatformOperations) -> R,
+{
+    state.sources
+        .iter_mut()
+        .find(|source| source.get_platform_type() == platform)
+        .map(|source| operation(source.get_operations_mut()))
+}
+
+fn try_convert_with_all_platforms(state: &SourcesConfig, link_converter: &LinkConverter, url: &str) -> Option<String> {
+    state.sources
+        .iter()
+        .find_map(|source| source.try_convert_link(link_converter, url))
+}
+
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
@@ -50,24 +187,13 @@ fn toggle_platform(
     enabled: bool,
     state_manager: tauri::State<StateManager>,
 ) -> Result<(), String> {
-    state_manager.update_state(|state| {
-        let platform_enum = match platform.to_lowercase().as_str() {
-            "twitter" => Platform::Twitter,
-            "bluesky" => Platform::Bluesky,
-            _ => return,
-        };
+    let platform_enum = parse_platform(&platform)
+        .ok_or_else(|| format!("Unknown platform: {}", platform))?;
 
-        for source in &mut state.sources {
-            match (source, &platform_enum) {
-                (PlatformSource::Twitter(data), Platform::Twitter) => {
-                    data.enabled = enabled;
-                }
-                (PlatformSource::Bluesky(data), Platform::Bluesky) => {
-                    data.enabled = enabled;
-                }
-                _ => {}
-            }
-        }
+    state_manager.update_state(|state| {
+        with_platform_data(state, platform_enum, |data| {
+            data.set_enabled(enabled);
+        });
     });
 
     Ok(())
@@ -81,36 +207,20 @@ fn select_converter(
 ) -> Result<(), String> {
     println!("select_converter called with platform: {}, converter_name: {}", platform, converter_name);
 
-    state_manager.update_state(|state| {
-        let platform_enum = match platform.to_lowercase().as_str() {
-            "twitter" => Platform::Twitter,
-            "bluesky" => Platform::Bluesky,
-            _ => return,
-        };
+    let platform_enum = parse_platform(&platform)
+        .ok_or_else(|| format!("Unknown platform: {}", platform))?;
 
-        for source in &mut state.sources {
-            match (source, &platform_enum) {
-                (PlatformSource::Twitter(data), Platform::Twitter) => {
-                    if let Some(found) = data.converters.iter().find(|c| {
-                        format!("{:?}", c).to_lowercase() == converter_name.to_lowercase()
-                    }) {
-                        data.selected = Some(found.clone());
-                    }
-                }
-                (PlatformSource::Bluesky(data), Platform::Bluesky) => {
-                    if let Some(found) = data.converters.iter().find(|c| {
-                        format!("{:?}", c).to_lowercase() == converter_name.to_lowercase()
-                    }) {
-                        data.selected = Some(found.clone());
-                    }
-                }
-                _ => {}
-            }
-        }
+    let success = state_manager.update_state(|state| {
+        with_platform_data(state, platform_enum, |data| {
+            data.set_converter_by_name(&converter_name)
+        }).unwrap_or(false)
     });
 
-    state_manager.save_to_file();
+    if !success {
+        return Err(format!("Failed to set converter '{}' for platform '{}'", converter_name, platform));
+    }
 
+    state_manager.save_to_file();
     Ok(())
 }
 
@@ -165,12 +275,12 @@ impl StateManager {
         self.state.lock().unwrap().clone()
     }
 
-    pub fn update_state<F>(&self, update_fn: F)
+    pub fn update_state<F, R>(&self, update_fn: F) -> R
     where
-        F: FnOnce(&mut SourcesConfig),
+        F: FnOnce(&mut SourcesConfig) -> R,
     {
         let mut state_guard = self.state.lock().unwrap();
-        update_fn(&mut state_guard);
+        let result = update_fn(&mut state_guard);
         // Clone the state while holding the lock to avoid deadlock
         let state_clone = state_guard.clone();
         // Drop the lock before emitting
@@ -179,6 +289,7 @@ impl StateManager {
         if let Err(e) = self.app.emit("state-changed", state_clone) {
             eprintln!("Failed to emit state change: {}", e);
         }
+        result
     }
 
     pub fn save_to_file(&self) {
@@ -207,38 +318,16 @@ fn update_state(
     selected_converter: Option<String>,
     state_manager: tauri::State<StateManager>,
 ) -> Result<(), String> {
-    state_manager.update_state(|state| {
-        let platform_enum = match platform.to_lowercase().as_str() {
-            "twitter" => Platform::Twitter,
-            "bluesky" => Platform::Bluesky,
-            _ => return,
-        };
+    let platform_enum = parse_platform(&platform)
+        .ok_or_else(|| format!("Unknown platform: {}", platform))?;
 
-        for source in &mut state.sources {
-            match (source, &platform_enum) {
-                (PlatformSource::Twitter(data), Platform::Twitter) => {
-                    data.enabled = enabled;
-                    if let Some(converter) = selected_converter.clone() {
-                        if let Some(found) = data.converters.iter().find(|c| {
-                            format!("{:?}", c).to_lowercase() == converter.to_lowercase()
-                        }) {
-                            data.selected = Some(found.clone());
-                        }
-                    }
-                }
-                (PlatformSource::Bluesky(data), Platform::Bluesky) => {
-                    data.enabled = enabled;
-                    if let Some(converter) = selected_converter.clone() {
-                        if let Some(found) = data.converters.iter().find(|c| {
-                            format!("{:?}", c).to_lowercase() == converter.to_lowercase()
-                        }) {
-                            data.selected = Some(found.clone());
-                        }
-                    }
-                }
-                _ => {}
+    state_manager.update_state(|state| {
+        with_platform_data(state, platform_enum, |data| {
+            data.set_enabled(enabled);
+            if let Some(converter) = &selected_converter {
+                data.set_converter_by_name(converter);
             }
-        }
+        });
     });
 
     Ok(())
@@ -264,30 +353,10 @@ fn start_clipboard_monitor(state_manager: tauri::State<StateManager>) -> Result<
 
             let state = app_handle.state::<StateManager>().get_state();
             
-            // Try each platform's conversion
-            for source in state.sources.iter() {
-                match source {
-                    PlatformSource::Twitter(data) if data.enabled => {
-                        if let Some(selected) = &data.selected {
-                            if let Some(converted) = LINK_CONVERTER.convert_link(&content, "twitter", &format!("{:?}", selected).to_lowercase()) {
-                                if let Err(e) = update_clipboard_and_notify(&app_handle, &content, &converted) {
-                                    eprintln!("Failed to update clipboard: {}", e);
-                                }
-                                break;
-                            }
-                        }
-                    },
-                    PlatformSource::Bluesky(data) if data.enabled => {
-                        if let Some(selected) = &data.selected {
-                            if let Some(converted) = LINK_CONVERTER.convert_link(&content, "bluesky", &format!("{:?}", selected).to_lowercase()) {
-                                if let Err(e) = update_clipboard_and_notify(&app_handle, &content, &converted) {
-                                    eprintln!("Failed to update clipboard: {}", e);
-                                }
-                                break;
-                            }
-                        }
-                    },
-                    _ => continue,
+            // Try to convert the link with any available platform
+            if let Some(converted) = try_convert_with_all_platforms(&state, &LINK_CONVERTER, &content) {
+                if let Err(e) = update_clipboard_and_notify(&app_handle, &content, &converted) {
+                    eprintln!("Failed to update clipboard: {}", e);
                 }
             }
         }
@@ -312,15 +381,6 @@ fn get_new_clipboard_content() -> Result<Option<String>, String> {
     } else {
         Ok(None)
     }
-}
-
-fn get_twitter_config(state: &SourcesConfig) -> Option<&PlatformConverters<config::app_config::TwitterConverters>> {
-    state.sources.iter()
-        .find(|s| matches!(s, PlatformSource::Twitter(_)))
-        .and_then(|s| match s {
-            PlatformSource::Twitter(data) => Some(data),
-            _ => None,
-        })
 }
 
 fn update_clipboard_and_notify(app_handle: &AppHandle, original: &str, converted: &str) -> Result<(), String> {
@@ -349,28 +409,8 @@ fn update_clipboard_and_notify(app_handle: &AppHandle, original: &str, converted
 fn convert_link(url: String, state_manager: tauri::State<StateManager>) -> Result<String, String> {
     let state = state_manager.get_state();
     
-    // Try each platform's conversion
-    for source in state.sources.iter() {
-        match source {
-            PlatformSource::Twitter(data) if data.enabled => {
-                if let Some(selected) = &data.selected {
-                    if let Some(converted) = LINK_CONVERTER.convert_link(&url, "twitter", &format!("{:?}", selected).to_lowercase()) {
-                        return Ok(converted);
-                    }
-                }
-            },
-            PlatformSource::Bluesky(data) if data.enabled => {
-                if let Some(selected) = &data.selected {
-                    if let Some(converted) = LINK_CONVERTER.convert_link(&url, "bluesky", &format!("{:?}", selected).to_lowercase()) {
-                        return Ok(converted);
-                    }
-                }
-            },
-            _ => continue,
-        }
-    }
-    
-    Err("Unable to convert link".to_string())
+    try_convert_with_all_platforms(&state, &LINK_CONVERTER, &url)
+        .ok_or_else(|| "Unable to convert link".to_string())
 }
 
 fn setup_app_exit_handler(app: &AppHandle) {
