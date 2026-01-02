@@ -19,6 +19,18 @@ impl ClipboardManager {
         }
     }
 
+    pub fn has_text_content(&self) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        match ClipboardContext::new() {
+            Ok(mut ctx) => {
+                match ctx.get_contents() {
+                    Ok(_) => Ok(true),
+                    Err(_) => Ok(false), 
+                }
+            }
+            Err(e) => Err(e.into())
+        }
+    }
+
     // Get the current clipboard content
     pub fn get_clipboard_content(&mut self) -> Result<String, Box<dyn Error + Send + Sync>> {
         match ClipboardContext::new()?.get_contents() {

@@ -1,7 +1,12 @@
 use crate::services::clipboard::ClipboardManager;
-use crate::MenuId;
+use crate::tray_menu::MenuId;
 use tauri::{AppHandle, Manager, Runtime};
-use crate::CLIPBOARD_MANAGER;
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
+
+// Local clipboard manager for handlers
+static CLIPBOARD_MANAGER: Lazy<Mutex<ClipboardManager>> =
+    Lazy::new(|| Mutex::new(ClipboardManager::new()));
 
 pub fn handle_set_clipboard() {
     println!("Set Clipboard menu item clicked");

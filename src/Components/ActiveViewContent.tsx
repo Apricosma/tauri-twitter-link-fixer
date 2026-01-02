@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import TwitterContent from "../views/TwitterContent";
 import HomeContent from "../views/HomeContent";
 import BlueSkyContent from "../views/BlueSkyContent";
@@ -33,10 +34,22 @@ const viewRegistry: ViewTypeMap = {
 };
 
 const ActiveViewContent = ({ activeView }: ActiveViewContentProps) => {
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const ActiveComponent = viewRegistry[activeView];
+
+  useEffect(() => {
+    setIsTransitioning(true);
+    const timer = setTimeout(() => setIsTransitioning(false), 150);
+    return () => clearTimeout(timer);
+  }, [activeView]);
+
   return (
-    <div className="flex-1 p-2">
-      <ActiveComponent />
+    <div className="flex-1 rounded-lg border bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className={`transition-opacity duration-150 ${
+        isTransitioning ? 'opacity-0' : 'opacity-100'
+      }`}>
+        <ActiveComponent />
+      </div>
     </div>
   );
 };
