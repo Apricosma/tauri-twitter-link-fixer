@@ -5,7 +5,6 @@ const TikTokContent = () => {
     <ServiceView
       platform="tiktok"
       title="TikTok"
-      icon="🎵"
       description="TikTok link conversion coming soon"
       howItWorksSteps={[
         "TikTok video link conversion", 

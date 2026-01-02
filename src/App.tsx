@@ -7,9 +7,7 @@ import { ThemeProvider } from "./components/theme-provider";
 import {
   SidebarProvider,
   SidebarInset,
-  SidebarTrigger,
 } from "./components/ui/sidebar";
-import { Separator } from "./components/ui/separator";
 
 function App() {
   const [activeView, setActiveView] = useState<ViewType>(ViewType.Home);
