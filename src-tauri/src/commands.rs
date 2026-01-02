@@ -154,6 +154,14 @@ fn get_new_clipboard_content() -> Result<Option<String>, String> {
         .lock()
         .map_err(|e| format!("Failed to lock clipboard manager: {}", e))?;
 
+    let has_text = clipboard_manager
+        .has_text_content()
+        .map_err(|e| format!("Failed to check clipboard text content: {}", e))?;
+    
+    if !has_text {
+        return Ok(None);
+    }
+
     let content = clipboard_manager
         .get_clipboard_content()
         .map_err(|e| format!("Failed to get clipboard content: {}", e))?;
