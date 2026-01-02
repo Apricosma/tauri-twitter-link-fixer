@@ -1,8 +1,8 @@
 import { usePlatform } from "../hooks/usePlatform";
-import ContentContainer from "../Components/ContentContainer";
-import ToggleSwitch from "../Components/ToggleSwitch";
-import DropdownMenu from "../Components/DropdownMenu";
-import ConversionNotification from "../Components/ConversionNotification";
+import ContentContainer from "../components/ContentContainer";
+import ToggleSwitch from "../components/ToggleSwitch";
+import DropdownMenu from "../components/DropdownMenu";
+import ConversionNotification from "../components/ConversionNotification";
 
 const BlueSkyContent = () => {
   const {

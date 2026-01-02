@@ -1,34 +1,30 @@
 import { useState } from "react";
 import "./App.css";
-import Sidebar from "./Components/Sidebar";
-import ActiveViewContent from "./Components/ActiveViewContent";
-import { ViewType } from "./Components/ActiveViewContent";
-import { ThemeProvider } from "./Components/theme-provider";
+import { AppSidebar } from "./components/AppSidebar";
+import ActiveViewContent from "./components/ActiveViewContent";
+import { ViewType } from "./components/ActiveViewContent";
+import { ThemeProvider } from "./components/theme-provider";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "./components/ui/sidebar";
+import { Separator } from "./components/ui/separator";
 
 function App() {
   const [activeView, setActiveView] = useState<ViewType>(ViewType.Home);
 
-  const sidebarItems = [
-    { label: "Home", onClick: () => setActiveView(ViewType.Home) },
-    { label: "Twitter", onClick: () => setActiveView(ViewType.Twitter) },
-    { label: "BlueSky", onClick: () => setActiveView(ViewType.BlueSky) },
-    { label: "Instagram", onClick: () => setActiveView(ViewType.Instagram) },
-    { label: "TikTok", onClick: () => setActiveView(ViewType.TikTok) },
-  ];
-
   return (
     <ThemeProvider defaultTheme="dark">
-      <div className="flex min-h-screen bg-background">
-        {/* Sidebar and Main Dock Area */}
-        <div className="flex flex-col w-64 flex-shrink-0 bg-appbg text-white">
-          <Sidebar items={sidebarItems} />
-        </div>
+      <SidebarProvider>
+        <AppSidebar activeView={activeView} setActiveView={setActiveView} />
+        <SidebarInset>
 
-        {/* Main App Section */}
-        <main className="flex-grow container mx-auto px-4 py-2">
-          <ActiveViewContent activeView={activeView} />
-        </main>
-      </div>
+          <main className="flex flex-1 flex-col gap-4 p-4">
+            <ActiveViewContent activeView={activeView} />
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
     </ThemeProvider>
   );
 }
