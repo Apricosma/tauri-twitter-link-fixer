@@ -20,7 +20,7 @@ function App() {
         <AppSidebar activeView={activeView} setActiveView={setActiveView} />
         <SidebarInset>
 
-          <main className="flex flex-1 flex-col gap-4 p-4">
+          <main className="flex flex-1 flex-col gap-4 p-4 pb-0 bg-background h-screen">
             <ActiveViewContent activeView={activeView} />
           </main>
         </SidebarInset>
