@@ -5,12 +5,12 @@ const TwitterContent = () => {
     <ServiceView
       platform="twitter"
       title="Twitter / X"
-      description="Convert Twitter and X links to embeddable formats"
+      description="Convert Twitter and X links"
       howItWorksSteps={[
         "Copy any Twitter or X link (twitter.com or x.com)",
         "The link will be automatically converted to your selected format",
         "Converted link replaces the original in your clipboard",
-        "Perfect for sharing embeddable content in Discord, etc."
+        "Paste your converted link into Discord, etc"
       ]}
       status="available"
     />
