@@ -9,7 +9,6 @@ import ConversionNotification from "../ConversionNotification";
 interface ServiceViewProps {
   platform: string;
   title: string;
-  icon: string;
   description: string;
   howItWorksSteps: string[];
   status?: "available" | "coming-soon";
@@ -18,7 +17,6 @@ interface ServiceViewProps {
 const ServiceView: React.FC<ServiceViewProps> = ({
   platform,
   title,
-  icon,
   description,
   howItWorksSteps,
   status = "available",
@@ -33,7 +31,7 @@ const ServiceView: React.FC<ServiceViewProps> = ({
 
   if (status === "coming-soon") {
     return (
-      <ComingSoonView icon={icon} title={title} description={description} />
+      <ComingSoonView title={title} description={description} />
     );
   }
 
@@ -48,8 +46,8 @@ const ServiceView: React.FC<ServiceViewProps> = ({
             title={title}
             enabled={platformData.enabled}
             converters={platformData.converters}
-            selected={platformData.selected}
-            onToggle={handleToggle}
+            selected={platformData.selected || ""}
+            onToggle={(_, enabled) => handleToggle(enabled)}
             onDropdownSelect={handleDropdownSelect}
           />
 
