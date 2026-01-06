@@ -1,5 +1,6 @@
 pub mod twitter;
 pub mod bluesky;
+pub mod tiktok;
 pub mod registry;
 
 /// Trait that all link converters must implement

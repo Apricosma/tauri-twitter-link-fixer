@@ -1,4 +1,4 @@
-use super::{LinkConverterStrategy, twitter::TwitterConverter, bluesky::BlueSkyConverter};
+use super::{LinkConverterStrategy, twitter::TwitterConverter, bluesky::BlueSkyConverter, tiktok::TikTokConverter};
 use std::sync::Arc;
 
 /// Registry that manages all available link converter strategies
@@ -13,6 +13,7 @@ impl ConverterRegistry {
             converters: vec![
                 Arc::new(TwitterConverter::new()),
                 Arc::new(BlueSkyConverter::new()),
+                Arc::new(TikTokConverter::new()),
             ],
         }
     }
