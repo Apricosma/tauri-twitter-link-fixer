@@ -1,6 +1,8 @@
+import { Suspense } from "react";
 import { ViewType } from "../components/ActiveViewContent";
 import { useConfig } from "../hooks/useConfig";
 import { getSimpleIcon } from "../utils/iconMapper";
+import { HelpCircle } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -44,7 +46,9 @@ const HomeContent = ({ setActiveView }: HomeContentProps) => {
               onClick={() => setActiveView(view)}
             >
               <div className="flex items-center space-x-2">
-                <Icon size={48} className="shrink-0 block" />
+                <Suspense fallback={<HelpCircle size={48} className="shrink-0 block" />}>
+                  <Icon size={48} className="shrink-0 block" />
+                </Suspense>
               </div>
             </Card>
           );

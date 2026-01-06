@@ -1,4 +1,5 @@
-import { Home, Settings } from "lucide-react";
+import { Suspense } from "react";
+import { Home, Settings, HelpCircle } from "lucide-react";
 import { ViewType } from "./ActiveViewContent";
 import { getSimpleIcon } from "../utils/iconMapper";
 import { useConfig } from "../hooks/useConfig";
@@ -70,7 +71,7 @@ export function AppSidebar({ activeView, setActiveView }: AppSidebarProps) {
                   <div className="px-2 py-1.5 text-sm text-destructive">Error loading platforms</div>
                 </SidebarMenuItem>
               ) : config ? (
-                config.sources.map((source, index) => {
+                config.sources.map((source) => {
                   const Icon = getSimpleIcon(source.metadata.icon);
                   const view = source.platform;
                   const isActive = activeView === view;
@@ -82,7 +83,9 @@ export function AppSidebar({ activeView, setActiveView }: AppSidebarProps) {
                         isActive={isActive}
                         tooltip={source.metadata.title}
                       >
-                        <Icon size={16} className="shrink-0" />
+                        <Suspense fallback={<HelpCircle size={16} className="shrink-0" />}>
+                          <Icon size={16} className="shrink-0" />
+                        </Suspense>
                         <span>{source.metadata.title}</span>
                         <span 
                           className={`ml-auto size-1 rounded-full ${
