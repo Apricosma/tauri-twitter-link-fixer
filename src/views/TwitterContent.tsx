@@ -5,6 +5,7 @@ const TwitterContent = () => {
     <ServiceView
       platform="twitter"
       title="Twitter / X"
+      icon="twitter"
       description="Convert Twitter and X links"
       howItWorksSteps={[
         "Copy any Twitter or X link (twitter.com or x.com)",

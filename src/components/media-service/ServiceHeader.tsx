@@ -1,4 +1,5 @@
 interface ServiceHeaderProps {
+  icon?: string;
   title: string;
   description: string;
 }

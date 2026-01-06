@@ -1,11 +1,11 @@
-use crate::services::clipboard::ClipboardManager;
+use crate::services::clipboard::{ClipboardManager, SystemClipboard};
 use crate::tray_menu::MenuId;
 use tauri::{AppHandle, Manager, Runtime};
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 
 // Local clipboard manager for handlers
-static CLIPBOARD_MANAGER: Lazy<Mutex<ClipboardManager>> =
+static CLIPBOARD_MANAGER: Lazy<Mutex<ClipboardManager<SystemClipboard>>> =
     Lazy::new(|| Mutex::new(ClipboardManager::new()));
 
 pub fn handle_set_clipboard() {
@@ -97,7 +97,7 @@ pub fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, menu_id_str: &str) {
 // Helper function to safely access the clipboard manager
 fn with_clipboard_manager<F, R>(f: F) -> Result<R, String>
 where
-    F: FnOnce(&mut ClipboardManager) -> Result<R, Box<dyn std::error::Error + Send + Sync>>,
+    F: FnOnce(&mut ClipboardManager<SystemClipboard>) -> Result<R, Box<dyn std::error::Error + Send + Sync>>,
 {
     match CLIPBOARD_MANAGER.lock() {
         Ok(mut clipboard_manager) => f(&mut clipboard_manager).map_err(|e| e.to_string()),

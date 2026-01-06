@@ -1,14 +1,14 @@
 use crate::config::app_config::SourcesConfig;
 use crate::platform_ops::{parse_platform, try_convert_with_all_platforms, with_platform_data};
-use crate::services::clipboard::ClipboardManager;
+use crate::services::clipboard::{ClipboardManager, SystemClipboard};
 use crate::services::link_converter::LinkConverter;
 use crate::state::StateManager;
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager};
 
-// Global services - TODO: Consider moving to dependency injection
-static CLIPBOARD_MANAGER: Lazy<Mutex<ClipboardManager>> =
+
+static CLIPBOARD_MANAGER: Lazy<Mutex<ClipboardManager<SystemClipboard>>> =
     Lazy::new(|| Mutex::new(ClipboardManager::new()));
 static LINK_CONVERTER: Lazy<LinkConverter> = Lazy::new(|| LinkConverter::new());
 
@@ -24,7 +24,7 @@ pub fn greet_from_app(invoke_message: String) -> () {
 
 #[tauri::command]
 pub fn get_config() -> SourcesConfig {
-    // TODO: Remove this after refactoring to use StateManager consistently
+
     use once_cell::sync::Lazy;
     static CONFIG: Lazy<Mutex<SourcesConfig>> = Lazy::new(|| Mutex::new(SourcesConfig::default()));
     CONFIG.lock().unwrap().clone()

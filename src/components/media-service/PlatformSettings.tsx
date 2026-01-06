@@ -14,7 +14,7 @@ interface PlatformSettingsProps {
   title: string;
   enabled: boolean;
   converters: any[];
-  selected: string;
+  selected: string | null;
   onToggle: (platform: string, enabled: boolean) => void;
   onDropdownSelect: (selected: string) => void;
 }

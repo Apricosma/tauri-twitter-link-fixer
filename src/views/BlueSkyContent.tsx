@@ -5,6 +5,7 @@ const BlueSkyContent = () => {
     <ServiceView
       platform="bluesky"
       title="BlueSky"
+      icon="bluesky"
       description="Convert BlueSky post links"
       howItWorksSteps={[
         "Copy any BlueSky post link (bsky.app)",
