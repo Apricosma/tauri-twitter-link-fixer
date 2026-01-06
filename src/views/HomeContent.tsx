@@ -1,9 +1,6 @@
-import {
-  SiX,
-  SiBluesky,
-  SiTiktok,
-  SiInstagram,
-} from "@icons-pack/react-simple-icons";
+import { ViewType } from "../components/ActiveViewContent";
+import { useConfig } from "../hooks/useConfig";
+import { getSimpleIcon } from "../utils/iconMapper";
 import {
   Card,
   CardContent,
@@ -11,7 +8,20 @@ import {
   CardTitle,
 } from "../components/ui/card";
 
-const HomeContent = () => {
+interface HomeContentProps {
+  setActiveView: (view: ViewType) => void;
+}
+
+const HomeContent = ({ setActiveView }: HomeContentProps) => {
+  const { config, loading } = useConfig();
+
+  if (loading || !config) {
+    return (
+      <div className="space-y-6 p-6 bg-sidebar rounded-2xl h-full min-h-full rounded-bl-none rounded-br-none">
+        <div className="text-center text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
   return (
     <div className="space-y-6 p-6 bg-sidebar rounded-2xl h-full min-h-full rounded-bl-none rounded-br-none">
       <div className="space-y-2">
@@ -23,26 +33,27 @@ const HomeContent = () => {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3">
-        <Card className="flex items-center p-4 hover:border-primary transition-colors cursor-pointer">
-          <div className="flex items-center space-x-2">
-            <SiX size={48} className="shrink-0 block" />
-          </div>
-        </Card>
-        <Card className="flex items-center p-4 hover:border-primary transition-colors cursor-pointer">
-          <div className="flex items-center space-x-2">
-            <SiBluesky size={48} className="shrink-0 block" />
-          </div>
-        </Card>
-        <Card className="flex items-center p-4 hover:border-primary transition-colors cursor-pointer">
-          <div className="flex items-center space-x-2">
-            <SiTiktok size={48} className="shrink-0 block" />
-          </div>
-        </Card>
-        <Card className="flex items-center p-4 hover:border-primary transition-colors cursor-pointer">
-          <div className="flex items-center space-x-2">
-            <SiInstagram size={48} className="shrink-0 block" />
-          </div>
-        </Card>
+        {config.sources.map((source) => {
+          const Icon = getSimpleIcon(source.metadata.icon);
+          const view = source.platform;
+          
+          return (
+            <Card
+              key={source.platform}
+              className="flex items-center p-4 hover:border-primary transition-colors cursor-pointer relative"
+              onClick={() => setActiveView(view)}
+            >
+              <div className="flex items-center space-x-2">
+                <Icon size={48} className="shrink-0 block" />
+              </div>
+              {!source.data.enabled && (
+                <span className="absolute top-2 right-2 text-xs bg-muted px-2 py-1 rounded">
+                  Disabled
+                </span>
+              )}
+            </Card>
+          );
+        })}
 
         <Card className="p-2 flex items-center justify-center border-dashed border-2 hover:border-primary transition-colors cursor-pointer">
           <div className="flex items-center space-x-2">

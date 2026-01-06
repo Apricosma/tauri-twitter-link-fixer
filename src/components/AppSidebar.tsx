@@ -1,5 +1,7 @@
-import { Home, Twitter, Cloud, Instagram, Music, Settings } from "lucide-react";
+import { Home, Settings } from "lucide-react";
 import { ViewType } from "./ActiveViewContent";
+import { getSimpleIcon } from "../utils/iconMapper";
+import { useConfig } from "../hooks/useConfig";
 import {
   Sidebar,
   SidebarContent,
@@ -18,38 +20,9 @@ interface AppSidebarProps {
   setActiveView: (view: ViewType) => void;
 }
 
-// Home item separated from platforms
-const homeItem = {
-  title: "Home",
-  icon: Home,
-  view: ViewType.Home,
-};
-
-// Platform items without Home
-const platformItems = [
-  {
-    title: "Twitter",
-    icon: Twitter,
-    view: ViewType.Twitter,
-  },
-  {
-    title: "BlueSky",
-    icon: Cloud,
-    view: ViewType.BlueSky,
-  },
-  {
-    title: "Instagram",
-    icon: Instagram,
-    view: ViewType.Instagram,
-  },
-  {
-    title: "TikTok",
-    icon: Music,
-    view: ViewType.TikTok,
-  },
-];
-
 export function AppSidebar({ activeView, setActiveView }: AppSidebarProps) {
+  const { config, loading, error } = useConfig();
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -72,12 +45,12 @@ export function AppSidebar({ activeView, setActiveView }: AppSidebarProps) {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton 
-                  onClick={() => setActiveView(homeItem.view)}
-                  isActive={activeView === homeItem.view}
-                  tooltip={homeItem.title}
+                  onClick={() => setActiveView("home")}
+                  isActive={activeView === "home"}
+                  tooltip="Home"
                 >
-                  <homeItem.icon />
-                  <span>{homeItem.title}</span>
+                  <Home />
+                  <span>Home</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -88,21 +61,40 @@ export function AppSidebar({ activeView, setActiveView }: AppSidebarProps) {
           <SidebarGroupLabel>Platforms</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {platformItems.map((item) => {
-                const isActive = activeView === item.view;
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
-                      onClick={() => setActiveView(item.view)}
-                      isActive={isActive}
-                      tooltip={item.title}
-                    >
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
+              {loading ? (
+                <SidebarMenuItem>
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading...</div>
+                </SidebarMenuItem>
+              ) : error ? (
+                <SidebarMenuItem>
+                  <div className="px-2 py-1.5 text-sm text-destructive">Error loading platforms</div>
+                </SidebarMenuItem>
+              ) : config ? (
+                config.sources.map((source, index) => {
+                  const Icon = getSimpleIcon(source.metadata.icon);
+                  const view = source.platform;
+                  const isActive = activeView === view;
+                  
+                  return (
+                    <SidebarMenuItem key={source.platform}>
+                      <SidebarMenuButton 
+                        onClick={() => setActiveView(view)}
+                        isActive={isActive}
+                        tooltip={source.metadata.title}
+                      >
+                        <Icon size={16} className="shrink-0" />
+                        <span>{source.metadata.title}</span>
+                        <span 
+                          className={`ml-auto size-1 rounded-full ${
+                            source.data.enabled ? "bg-green-500" : "bg-red-500"
+                          }`}
+                          title={source.data.enabled ? "Enabled" : "Disabled"}
+                        />
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })
+              ) : null}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

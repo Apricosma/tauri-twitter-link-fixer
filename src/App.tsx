@@ -11,7 +11,7 @@ import {
 } from "./components/ui/sidebar";
 
 function App() {
-  const [activeView, setActiveView] = useState<ViewType>(ViewType.Home);
+  const [activeView, setActiveView] = useState<ViewType>("home");
 
   return (
     <ThemeProvider defaultTheme="dark">
@@ -20,7 +20,7 @@ function App() {
         <SidebarInset>
           <main className="flex flex-1 flex-col gap-4 p-4 pb-0 bg-background h-screen overflow-hidden">
             <div className="flex-1 min-h-0">
-              <ActiveViewContent activeView={activeView} />
+              <ActiveViewContent activeView={activeView} setActiveView={setActiveView} />
             </div>
           </main>
         </SidebarInset>

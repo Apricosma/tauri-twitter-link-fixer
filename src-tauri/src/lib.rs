@@ -69,6 +69,7 @@ pub fn run() {
             greet,
             greet_from_app,
             get_config,
+            get_frontend_config,
             update_config,
             get_state,
             update_state,
