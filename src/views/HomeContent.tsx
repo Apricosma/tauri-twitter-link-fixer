@@ -36,7 +36,7 @@ const HomeContent = ({ setActiveView }: HomeContentProps) => {
         {config.sources.map((source) => {
           const Icon = getSimpleIcon(source.metadata.icon);
           const view = source.platform;
-          
+
           return (
             <Card
               key={source.platform}
@@ -46,11 +46,6 @@ const HomeContent = ({ setActiveView }: HomeContentProps) => {
               <div className="flex items-center space-x-2">
                 <Icon size={48} className="shrink-0 block" />
               </div>
-              {!source.data.enabled && (
-                <span className="absolute top-2 right-2 text-xs bg-muted px-2 py-1 rounded">
-                  Disabled
-                </span>
-              )}
             </Card>
           );
         })}
