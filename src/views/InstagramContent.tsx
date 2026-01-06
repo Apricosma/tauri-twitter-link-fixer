@@ -5,7 +5,6 @@ const InstagramContent = () => {
     <ServiceView
       platform="instagram"
       title="Instagram"
-      icon="instagram"
       description="Instagram link conversion coming soon"
       howItWorksSteps={[
         "Instagram post link conversion",
