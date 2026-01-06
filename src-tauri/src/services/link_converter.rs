@@ -1,65 +1,25 @@
-use regex::Regex;
+use crate::services::converters::registry::ConverterRegistry;
 
+/// Facade for the converter registry to maintain backward compatibility
 pub struct LinkConverter {
-    twitter_regex: Regex,
-    bluesky_regex: Regex,
+    registry: ConverterRegistry,
 }
 
 impl LinkConverter {
     pub fn new() -> Self {
         LinkConverter {
-            twitter_regex: Regex::new(r"^(?:https?://)?(?:www\.)?(twitter\.com|x\.com)/([^/]+)/status/([0-9]+)").unwrap(),
-            bluesky_regex: Regex::new(r"^(?:https?://)?(?:www\.)?(bsky\.app)/profile/([^/]+)/post/([^/\s]+)").unwrap(),
+            registry: ConverterRegistry::new(),
         }
     }
 
+    /// Convert a link using a specific platform and converter
     pub fn convert_link(&self, url: &str, platform: &str, converter: &str) -> Option<String> {
-        match platform {
-            "twitter" => self.convert_twitter_link(url, converter),
-            "bluesky" => self.convert_bluesky_link(url, converter),
-            _ => None,
-        }
+        self.registry.convert(url, platform, converter)
     }
 
-    fn convert_twitter_link(&self, url: &str, converter: &str) -> Option<String> {
-        if !self.twitter_regex.is_match(url) {
-            return None;
-        }
-
-        let caps = self.twitter_regex.captures(url)?;
-        let username = caps.get(2)?.as_str();
-        let status_id = caps.get(3)?.as_str();
-
-        let converter_domain = match converter.to_lowercase().as_str() {
-            "fxtwitter" => "fxtwitter.com",
-            "vxtwitter" => "vxtwitter.com",
-            "fixupx" => "fixupx.com",
-            "fixvx" => "fixvx.com",
-            _ => return None,
-        };
-
-        Some(format!("https://{}/{}/status/{}", converter_domain, username, status_id))
-    }
-
-    fn convert_bluesky_link(&self, url: &str, converter: &str) -> Option<String> {
-        if !self.bluesky_regex.is_match(url) {
-            return None;
-        }
-
-        let caps = self.bluesky_regex.captures(url)?;
-        let username = caps.get(2)?.as_str();
-        let post_id = caps.get(3)?.as_str();
-
-        let converter_domain = match converter.to_lowercase().as_str() {
-            "bsky" => "bsky.app",
-            "fxbsky" => "fxbsky.app",
-            "vxbsky" => "vxbsky.app",
-            "bskye" => "bskye.app",
-            "bskyx" => "bskyx.app",
-            _ => return None,
-        };
-
-        Some(format!("https://{}/profile/{}/post/{}", converter_domain, username, post_id))
+    /// Get the underlying registry for advanced usage
+    pub fn registry(&self) -> &ConverterRegistry {
+        &self.registry
     }
 }
 
@@ -196,7 +156,7 @@ mod tests {
     fn test_converted_url_not_recognized_as_vanilla() {
         let converter = LinkConverter::new();
         
-        // These URLs should not match the twitter_regex pattern
+        // These URLs should not be re-converted
         let converted_urls = vec![
             "https://fxtwitter.com/user/status/123456",
             "https://vxtwitter.com/user/status/123456",
@@ -205,14 +165,7 @@ mod tests {
         ];
 
         for url in converted_urls {
-            // The regex should not match these domains
-            assert!(
-                !converter.twitter_regex.is_match(url),
-                "Converted URL '{}' should not match twitter regex pattern",
-                url
-            );
-            
-            // Therefore conversion should return None
+            // Conversion should return None for already-converted URLs
             let result = converter.convert_link(url, "twitter", "fxtwitter");
             assert!(
                 result.is_none(),
@@ -338,7 +291,7 @@ mod tests {
     fn test_converted_bluesky_url_not_recognized_as_vanilla() {
         let converter = LinkConverter::new();
         
-        // These URLs should not match the bluesky_regex pattern
+        // These URLs should not be re-converted
         let converted_urls = vec![
             "https://fxbsky.app/profile/user.bsky.social/post/123456",
             "https://vxbsky.app/profile/user.bsky.social/post/123456",
@@ -347,14 +300,7 @@ mod tests {
         ];
 
         for url in converted_urls {
-            // The regex should not match these domains
-            assert!(
-                !converter.bluesky_regex.is_match(url),
-                "Converted Bluesky URL '{}' should not match bluesky regex pattern",
-                url
-            );
-            
-            // Therefore conversion should return None
+            // Conversion should return None for already-converted URLs
             let result = converter.convert_link(url, "bluesky", "fxbsky");
             assert!(
                 result.is_none(),

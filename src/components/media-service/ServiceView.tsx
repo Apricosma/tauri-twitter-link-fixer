@@ -49,7 +49,7 @@ const ServiceView: React.FC<ServiceViewProps> = ({
             enabled={platformData.enabled}
             converters={platformData.converters}
             selected={platformData.selected}
-            onToggle={handleToggle}
+            onToggle={(_platform, enabled) => handleToggle(enabled)}
             onDropdownSelect={handleDropdownSelect}
           />
 
