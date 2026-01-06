@@ -34,6 +34,14 @@ pub enum BlueskyConverters {
     Bskyx,
 }
 
+#[derive(Debug, Serialize, Deserialize, Hash, Eq, PartialEq, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum TikTokConverters {
+    Tntok,
+    Tfxktok,
+    Tiktokez,
+}
+
 // --- Platform Source Definitions ---
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -43,7 +51,8 @@ pub enum PlatformSource {
     Twitter(PlatformConverters<TwitterConverters>),
     #[serde(rename = "bluesky")]
     Bluesky(PlatformConverters<BlueskyConverters>),
-    // Extend later for Instagram, Reddit, TikTok...
+    #[serde(rename = "tiktok")]
+    Tiktok(PlatformConverters<TikTokConverters>),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -87,6 +96,14 @@ impl Default for SourcesConfig {
                     ],
                     selected: Some(BlueskyConverters::Bsky),
                 }),
+                PlatformSource::Tiktok(PlatformConverters {
+                    enabled: true,
+                    converters: vec![
+                        TikTokConverters::Tfxktok,
+                        TikTokConverters::Tiktokez,
+                    ],
+                    selected: Some(TikTokConverters::Tfxktok),
+                }),
             ],
         }
     }
@@ -96,11 +113,14 @@ impl SourcesConfig {
     pub fn from_file_or_default(path: &str) -> Result<Self, ConfigError> {
         let config_path = Path::new(path);
 
-        if !config_path.exists() {
-            println!(
-                "Config file not found. Creating default config at {:?}",
-                config_path
-            );
+        // Development: Always recreate config
+        let should_recreate = true;
+        
+        // Production: Only create if missing
+        // let should_recreate = !config_path.exists();
+
+        if should_recreate {
+            println!("Recreating config file at {:?}", config_path);
 
             let default = Self::default();
             let yaml = serde_yaml::to_string(&default).expect("Failed to serialize default config");
@@ -161,7 +181,19 @@ impl SourcesConfig {
                         ));
                     }
                 }
-                // Add similar match arms here later for Instagram, Reddit, TikTok...
+                (PlatformSource::Tiktok(data), Platform::Tiktok) => {
+                    if let Some(found) = data.converters.iter().find(|c| {
+                        format!("{:?}", c).to_lowercase() == converter_name.to_lowercase()
+                    }) {
+                        data.selected = Some(found.clone());
+                        return Ok(());
+                    } else {
+                        return Err(format!(
+                            "Converter '{}' not found in TikTok converters",
+                            converter_name
+                        ));
+                    }
+                }
                 _ => {}
             }
         }

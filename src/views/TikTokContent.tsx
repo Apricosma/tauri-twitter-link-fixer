@@ -5,14 +5,14 @@ const TikTokContent = () => {
     <ServiceView
       platform="tiktok"
       title="TikTok"
-      description="TikTok link conversion coming soon"
+      description="Convert TikTok video links"
       howItWorksSteps={[
-        "TikTok video link conversion", 
-        "Profile link handling",
-        "Multiple converter options",
-        "Automatic clipboard detection"
+        "Copy any TikTok video link (tiktok.com/@username/video/id)",
+        "The link will be automatically converted to your selected format",
+        "Converted link replaces the original in your clipboard",
+        "Paste your converted link into Discord, etc"
       ]}
-      status="coming-soon"
+      status="available"
     />
   );
 };
