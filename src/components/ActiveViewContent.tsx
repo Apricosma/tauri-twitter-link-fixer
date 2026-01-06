@@ -1,44 +1,65 @@
-import { useMemo } from "react";
-import TwitterContent from "../views/TwitterContent";
 import HomeContent from "../views/HomeContent";
-import BlueSkyContent from "../views/BlueSkyContent";
-import InstagramContent from "../views/InstagramContent";
-import TikTokContent from "../views/TikTokContent";
+import ServiceView from "./media-service/ServiceView";
+import { useConfig } from "../hooks/useConfig";
 
 interface ActiveViewContentProps {
-  activeView: ViewType;
+  activeView: string;
+  setActiveView: (view: string) => void;
 }
 
-export enum ViewType {
-  Home = "home",
-  Twitter = "twitter",
-  BlueSky = "bluesky",
-  Instagram = "instagram",
-  TikTok = "tiktok",
-}
+// Export ViewType as a type alias for string to maintain compatibility
+export type ViewType = string;
 
-interface ViewTypeMap {
-  [ViewType.Home]: React.FC;
-  [ViewType.Twitter]: React.FC;
-  [ViewType.BlueSky]: React.FC;
-  [ViewType.Instagram]: React.FC;
-  [ViewType.TikTok]: React.FC;
-}
+const ActiveViewContent = ({ activeView, setActiveView }: ActiveViewContentProps) => {
+  const { config, loading } = useConfig();
 
-const viewRegistry: ViewTypeMap = {
-  [ViewType.Home]: HomeContent,
-  [ViewType.Twitter]: TwitterContent,
-  [ViewType.BlueSky]: BlueSkyContent,
-  [ViewType.Instagram]: InstagramContent,
-  [ViewType.TikTok]: TikTokContent,
-};
+  if (loading || !config) {
+    return (
+      <div className="flex-1 h-full rounded-lg border bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-hidden border-b-0 rounded-bl-none rounded-br-none">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-muted-foreground">Loading...</div>
+        </div>
+      </div>
+    );
+  }
 
-const ActiveViewContent = ({ activeView }: ActiveViewContentProps) => {
-  const ActiveComponent = useMemo(() => viewRegistry[activeView], [activeView]);
+  // Home view
+  if (activeView === "home") {
+    return (
+      <div className="flex-1 h-full rounded-lg border bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-hidden border-b-0 rounded-bl-none rounded-br-none">
+        <HomeContent setActiveView={setActiveView} />
+      </div>
+    );
+  }
 
+  // Find platform in config
+  const platformSource = config.sources.find(s => s.platform === activeView);
+
+  if (!platformSource) {
+    return (
+      <div className="flex-1 h-full rounded-lg border bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-hidden border-b-0 rounded-bl-none rounded-br-none">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-muted-foreground">Platform not found</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Dynamic platform view
   return (
     <div className="flex-1 h-full rounded-lg border bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-hidden border-b-0 rounded-bl-none rounded-br-none">
-      <ActiveComponent />
+      <ServiceView
+        platform={platformSource.platform}
+        title={platformSource.metadata.title}
+        description={`Convert ${platformSource.metadata.title} links`}
+        howItWorksSteps={[
+          `Copy any ${platformSource.metadata.title} link`,
+          "The link will be automatically converted to your selected format",
+          "Converted link replaces the original in your clipboard",
+          "Paste your converted link into Discord, etc"
+        ]}
+        status="available"
+      />
     </div>
   );
 };

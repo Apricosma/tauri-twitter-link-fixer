@@ -45,28 +45,26 @@ const PlatformSettings: React.FC<PlatformSettingsProps> = ({
           />
         </div>
 
-        {enabled && (
-          <div className="space-y-2 flex justify-between">
-            <Label htmlFor={`select-${platform}`}>Converter Service</Label>
-            <Select
-              value={selected || ""}
-              onValueChange={(value) => {
-                onDropdownSelect(value);
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select converter" />
-              </SelectTrigger>
-              <SelectContent>
-                {converters.map((converter) => (
-                  <SelectItem key={converter} value={converter}>
-                    {converter}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+        <div className="space-y-2 flex justify-between">
+          <Label htmlFor={`select-${platform}`}>Converter Service</Label>
+          <Select
+            value={selected || ""}
+            onValueChange={(value) => {
+              onDropdownSelect(value);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select converter" />
+            </SelectTrigger>
+            <SelectContent>
+              {converters.map((converter) => (
+                <SelectItem key={converter} value={converter}>
+                  {converter}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </CardContent>
     </Card>
   );

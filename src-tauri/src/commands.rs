@@ -1,4 +1,5 @@
 use crate::config::app_config::SourcesConfig;
+use crate::config::frontend::{transform_platform_source, FrontendAppConfig, FrontendPlatformSource};
 use crate::platform_ops::{parse_platform, try_convert_with_all_platforms, with_platform_data};
 use crate::services::clipboard::{ClipboardManager, SystemClipboard};
 use crate::services::link_converter::LinkConverter;
@@ -11,6 +12,22 @@ use tauri::{AppHandle, Emitter, Manager};
 static CLIPBOARD_MANAGER: Lazy<Mutex<ClipboardManager<SystemClipboard>>> =
     Lazy::new(|| Mutex::new(ClipboardManager::new()));
 static LINK_CONVERTER: Lazy<LinkConverter> = Lazy::new(|| LinkConverter::new());
+
+// Helper function to emit config updates to frontend
+fn emit_config_update(app: &AppHandle, state_manager: &tauri::State<StateManager>) {
+    let config = state_manager.get_state();
+    let frontend_sources: Vec<FrontendPlatformSource> = config
+        .sources
+        .iter()
+        .map(|source| transform_platform_source(source))
+        .collect();
+    
+    let frontend_config = FrontendAppConfig {
+        sources: frontend_sources,
+    };
+    
+    let _ = app.emit("config-updated", &frontend_config);
+}
 
 #[tauri::command]
 pub fn greet(name: &str) -> String {
@@ -31,6 +48,21 @@ pub fn get_config() -> SourcesConfig {
 }
 
 #[tauri::command]
+pub fn get_frontend_config(state_manager: tauri::State<StateManager>) -> FrontendAppConfig {
+    let config = state_manager.get_state();
+    
+    let frontend_sources: Vec<FrontendPlatformSource> = config
+        .sources
+        .iter()
+        .map(|source| transform_platform_source(source))
+        .collect();
+    
+    FrontendAppConfig {
+        sources: frontend_sources,
+    }
+}
+
+#[tauri::command]
 pub fn update_config(state_manager: tauri::State<StateManager>) -> Result<(), String> {
     state_manager.save_to_file();
     Ok(())
@@ -43,6 +75,7 @@ pub fn get_state(state_manager: tauri::State<StateManager>) -> SourcesConfig {
 
 #[tauri::command]
 pub fn toggle_platform(
+    app: AppHandle,
     platform: String,
     enabled: bool,
     state_manager: tauri::State<StateManager>,
@@ -56,11 +89,13 @@ pub fn toggle_platform(
         });
     });
 
+    emit_config_update(&app, &state_manager);
     Ok(())
 }
 
 #[tauri::command]
 pub fn select_converter(
+    app: AppHandle,
     platform: String,
     converter_name: String,
     state_manager: tauri::State<StateManager>,
@@ -81,11 +116,13 @@ pub fn select_converter(
     }
 
     state_manager.save_to_file();
+    emit_config_update(&app, &state_manager);
     Ok(())
 }
 
 #[tauri::command]
 pub fn update_state(
+    app: AppHandle,
     platform: String,
     enabled: bool,
     selected_converter: Option<String>,
@@ -103,6 +140,7 @@ pub fn update_state(
         });
     });
 
+    emit_config_update(&app, &state_manager);
     Ok(())
 }
 

@@ -1,3 +1,6 @@
+import { ViewType } from "../components/ActiveViewContent";
+import { useConfig } from "../hooks/useConfig";
+import { getSimpleIcon } from "../utils/iconMapper";
 import {
   Card,
   CardContent,
@@ -5,41 +8,49 @@ import {
   CardTitle,
 } from "../components/ui/card";
 
-const HomeContent = () => {
+interface HomeContentProps {
+  setActiveView: (view: ViewType) => void;
+}
+
+const HomeContent = ({ setActiveView }: HomeContentProps) => {
+  const { config, loading } = useConfig();
+
+  if (loading || !config) {
+    return (
+      <div className="space-y-6 p-6 bg-sidebar rounded-2xl h-full min-h-full rounded-bl-none rounded-br-none">
+        <div className="text-center text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
   return (
     <div className="space-y-6 p-6 bg-sidebar rounded-2xl h-full min-h-full rounded-bl-none rounded-br-none">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Welcome to Link Fixer
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight">Welcome to Cosma</h1>
         <p className="text-muted-foreground">
-          Convert social media links to embeddable formats automatically.
+          Your one-stop app to convert social media links to embeddable formats
+          automatically.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="p-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-2xl">🐦</span>
-            <h3 className="font-semibold">Twitter/X</h3>
-          </div>
-        </Card>
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3">
+        {config.sources.map((source) => {
+          const Icon = getSimpleIcon(source.metadata.icon);
+          const view = source.platform;
 
-        <Card className="p-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-2xl">🦋</span>
-            <h3 className="font-semibold">BlueSky</h3>
-          </div>
-        </Card>
+          return (
+            <Card
+              key={source.platform}
+              className="flex items-center p-4 hover:border-primary transition-colors cursor-pointer relative"
+              onClick={() => setActiveView(view)}
+            >
+              <div className="flex items-center space-x-2">
+                <Icon size={48} className="shrink-0 block" />
+              </div>
+            </Card>
+          );
+        })}
 
-        <Card className="p-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-2xl">🦋</span>
-            <h3 className="font-semibold">Instagram</h3>
-          </div>
-        </Card>
-
-        <Card className="p-4">
+        <Card className="p-2 flex items-center justify-center border-dashed border-2 hover:border-primary transition-colors cursor-pointer">
           <div className="flex items-center space-x-2">
             <span className="text-2xl">⚡</span>
             <h3 className="font-semibold">Add your own!</h3>
