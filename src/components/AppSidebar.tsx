@@ -54,12 +54,14 @@ export function AppSidebar({ activeView, setActiveView }: AppSidebarProps) {
     <Sidebar>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-2">
-          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <span className="text-lg">🔗</span>
+          <div className="flex aspect-square size-8 items-center justify-center rounded-lg text-primary-foreground">
+            <span className="text-lg">
+              <img src="/appLogo.png" alt="App Logo" className="h-8 w-8" />
+            </span>
           </div>
           <div className="flex flex-col gap-0.5 leading-none">
-            <span className="font-semibold">Link Fixer</span>
-            <span className="text-xs text-muted-foreground">Social Media Converter</span>
+            <span className="font-semibold">Cosma Link Converter</span>
+            <span className="text-xs text-muted-foreground">Embeds from Various Platforms</span>
           </div>
         </div>
       </SidebarHeader>

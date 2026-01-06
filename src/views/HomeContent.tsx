@@ -1,4 +1,10 @@
 import {
+  SiX,
+  SiBluesky,
+  SiTiktok,
+  SiInstagram,
+} from "@icons-pack/react-simple-icons";
+import {
   Card,
   CardContent,
   CardHeader,
@@ -9,37 +15,36 @@ const HomeContent = () => {
   return (
     <div className="space-y-6 p-6 bg-sidebar rounded-2xl h-full min-h-full rounded-bl-none rounded-br-none">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Welcome to Link Fixer
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight">Welcome to Cosma</h1>
         <p className="text-muted-foreground">
-          Convert social media links to embeddable formats automatically.
+          Your one-stop app to convert social media links to embeddable formats
+          automatically.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="p-4">
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3">
+        <Card className="flex items-center p-4 hover:border-primary transition-colors cursor-pointer">
           <div className="flex items-center space-x-2">
-            <span className="text-2xl">🐦</span>
-            <h3 className="font-semibold">Twitter/X</h3>
+            <SiX size={48} className="shrink-0 block" />
+          </div>
+        </Card>
+        <Card className="flex items-center p-4 hover:border-primary transition-colors cursor-pointer">
+          <div className="flex items-center space-x-2">
+            <SiBluesky size={48} className="shrink-0 block" />
+          </div>
+        </Card>
+        <Card className="flex items-center p-4 hover:border-primary transition-colors cursor-pointer">
+          <div className="flex items-center space-x-2">
+            <SiTiktok size={48} className="shrink-0 block" />
+          </div>
+        </Card>
+        <Card className="flex items-center p-4 hover:border-primary transition-colors cursor-pointer">
+          <div className="flex items-center space-x-2">
+            <SiInstagram size={48} className="shrink-0 block" />
           </div>
         </Card>
 
-        <Card className="p-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-2xl">🦋</span>
-            <h3 className="font-semibold">BlueSky</h3>
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-2xl">🦋</span>
-            <h3 className="font-semibold">Instagram</h3>
-          </div>
-        </Card>
-
-        <Card className="p-4">
+        <Card className="p-2 flex items-center justify-center border-dashed border-2 hover:border-primary transition-colors cursor-pointer">
           <div className="flex items-center space-x-2">
             <span className="text-2xl">⚡</span>
             <h3 className="font-semibold">Add your own!</h3>
