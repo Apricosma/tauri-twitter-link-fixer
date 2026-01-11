@@ -4,9 +4,9 @@ A work-in-progress tauri based app to make embedding in discord or other social 
 
 Planned features 
 - [x] Easily toggle between different services
-- [] A preview of how the embed looks inside of discord
-- [] All commonly used platforms such as discord, instagram, tiktok, bluesky, and reddit
-- [] Tray management for easy desktop usage 
+- [ ] A preview of how the embed looks inside of discord
+- [ ] All commonly used platforms such as discord, instagram, tiktok, bluesky, and reddit
+- [ ] Tray management for easy desktop usage 
 
 ## Recommended IDE Setup
 
