@@ -46,9 +46,9 @@ export function AppSidebar({ activeView, setActiveView }: AppSidebarProps) {
             </span>
           </div>
           <div className="flex flex-col gap-0.5 leading-none">
-            <span className="font-semibold">Cosma Link Converter</span>
+            <span className="font-semibold">Cosma Converter</span>
             <span className="text-xs text-muted-foreground">
-              Embeds from Various Platforms
+              Embed from Various Platforms
             </span>
           </div>
         </div>

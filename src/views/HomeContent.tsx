@@ -27,10 +27,12 @@ const HomeContent = ({ setActiveView }: HomeContentProps) => {
   return (
     <div className="space-y-6 p-6 bg-sidebar rounded-2xl h-full min-h-full rounded-bl-none rounded-br-none">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Welcome to Cosma</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Welcome to Cosma Converter
+        </h1>
         <p className="text-muted-foreground">
           Your one-stop app to convert social media links to embeddable formats
-          automatically.
+          for Discord and more.
         </p>
       </div>
 
