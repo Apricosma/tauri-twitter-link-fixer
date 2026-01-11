@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "tauri-twitter-link-fixer",
+  "productName": "Cosma Converter",
   "version": "0.1.0",
   "identifier": "com.tauri-twitter-link-fixer.app",
   "build": {
@@ -12,10 +12,10 @@
   "app": {
     "windows": [
       {
-        "title": "Twitter Link Fixer",
-        "width": 800,
-        "height": 600,
-        "resizable": false,
+        "title": "Cosma Converter",
+        "width": 900,
+        "height": 800,
+        "resizable": true,
         "maximizable": false,
         "fullscreen": false
       }

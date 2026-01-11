@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { ViewType } from "../components/ActiveViewContent";
 import { useConfig } from "../hooks/useConfig";
 import { getSimpleIcon } from "../utils/iconMapper";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, CircleAlert } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -27,10 +27,12 @@ const HomeContent = ({ setActiveView }: HomeContentProps) => {
   return (
     <div className="space-y-6 p-6 bg-sidebar rounded-2xl h-full min-h-full rounded-bl-none rounded-br-none">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Welcome to Cosma</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Welcome to Cosma Converter
+        </h1>
         <p className="text-muted-foreground">
           Your one-stop app to convert social media links to embeddable formats
-          automatically.
+          for Discord and more.
         </p>
       </div>
 
@@ -46,7 +48,9 @@ const HomeContent = ({ setActiveView }: HomeContentProps) => {
               onClick={() => setActiveView(view)}
             >
               <div className="flex items-center space-x-2">
-                <Suspense fallback={<HelpCircle size={48} className="shrink-0 block" />}>
+                <Suspense
+                  fallback={<HelpCircle size={48} className="shrink-0 block" />}
+                >
                   <Icon size={48} className="shrink-0 block" />
                 </Suspense>
               </div>
@@ -96,6 +100,30 @@ const HomeContent = ({ setActiveView }: HomeContentProps) => {
                 Copy any supported link - it will be automatically converted!
               </p>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="gap-2">
+        <CardHeader className="text-xl">
+          <CardTitle className="flex gap-2 items-center">
+            <CircleAlert size={32} className="text-primary" />
+            Note
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-y-4">
+            <p>
+              All included embedding services
+              <span className="text-primary"> are not</span> affiliated with
+              Cosma Converter. We have no control over their availability or
+              usage.
+            </p>
+            <p>
+              These services may or may not work, and their availability can
+              change without notice. If a service stops working for more than a
+              week, please notify us via GitHub Issues.
+            </p>
+            <p>Please use these services at your own discretion.</p>
           </div>
         </CardContent>
       </Card>

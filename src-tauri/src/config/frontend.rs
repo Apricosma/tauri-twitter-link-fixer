@@ -88,5 +88,14 @@ pub fn transform_platform_source(source: &PlatformSource) -> FrontendPlatformSou
                 selected: data.selected.as_ref().map(|s| format!("{:?}", s).to_lowercase()).unwrap_or_default(),
             },
         },
+        PlatformSource::Instagram(data) => FrontendPlatformSource {
+            platform: "instagram".to_string(),
+            metadata: get_platform_metadata("instagram"),
+            data: FrontendConverterConfig {
+                enabled: data.enabled,
+                converters: data.converters.iter().map(|c| format!("{:?}", c).to_lowercase()).collect(),
+                selected: data.selected.as_ref().map(|s| format!("{:?}", s).to_lowercase()).unwrap_or_default(),
+            },
+        },
     }
 }

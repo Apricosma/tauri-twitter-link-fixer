@@ -42,6 +42,14 @@ pub enum TikTokConverters {
     Tiktokez,
 }
 
+#[derive(Debug, Serialize, Deserialize, Hash, Eq, PartialEq, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum InstagramConverters {
+    Ddinstagram,
+    Kkinstagram,
+    Instagramez,
+    Eeinstagram,
+}
 // --- Platform Source Definitions ---
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -53,6 +61,8 @@ pub enum PlatformSource {
     Bluesky(PlatformConverters<BlueskyConverters>),
     #[serde(rename = "tiktok")]
     Tiktok(PlatformConverters<TikTokConverters>),
+    #[serde(rename = "instagram")]
+    Instagram(PlatformConverters<InstagramConverters>),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -104,6 +114,16 @@ impl Default for SourcesConfig {
                     ],
                     selected: Some(TikTokConverters::Tfxktok),
                 }),
+                PlatformSource::Instagram(PlatformConverters {
+                    enabled: true,
+                    converters: vec![
+                        InstagramConverters::Ddinstagram,
+                        InstagramConverters::Kkinstagram,
+                        InstagramConverters::Instagramez,
+                        InstagramConverters::Eeinstagram,
+                    ],
+                    selected: Some(InstagramConverters::Kkinstagram),
+                }),
             ],
         }
     }
@@ -146,57 +166,5 @@ impl SourcesConfig {
 
         let yaml = serde_yaml::to_string(self).expect("Failed to serialize config");
         fs::write(&config_path, yaml).expect("Failed to write config file");
-    }
-
-    pub fn set_selected_converter(
-        &mut self,
-        platform: Platform,
-        converter_name: &str,
-    ) -> Result<(), String> {
-        for source in &mut self.sources {
-            match (source, &platform) {
-                (PlatformSource::Twitter(data), Platform::Twitter) => {
-                    if let Some(found) = data.converters.iter().find(|c| {
-                        format!("{:?}", c).to_lowercase() == converter_name.to_lowercase()
-                    }) {
-                        data.selected = Some(found.clone());
-                        return Ok(());
-                    } else {
-                        return Err(format!(
-                            "Converter '{}' not found in Twitter converters",
-                            converter_name
-                        ));
-                    }
-                }
-                (PlatformSource::Bluesky(data), Platform::Bluesky) => {
-                    if let Some(found) = data.converters.iter().find(|c| {
-                        format!("{:?}", c).to_lowercase() == converter_name.to_lowercase()
-                    }) {
-                        data.selected = Some(found.clone());
-                        return Ok(());
-                    } else {
-                        return Err(format!(
-                            "Converter '{}' not found in Bluesky converters",
-                            converter_name
-                        ));
-                    }
-                }
-                (PlatformSource::Tiktok(data), Platform::Tiktok) => {
-                    if let Some(found) = data.converters.iter().find(|c| {
-                        format!("{:?}", c).to_lowercase() == converter_name.to_lowercase()
-                    }) {
-                        data.selected = Some(found.clone());
-                        return Ok(());
-                    } else {
-                        return Err(format!(
-                            "Converter '{}' not found in TikTok converters",
-                            converter_name
-                        ));
-                    }
-                }
-                _ => {}
-            }
-        }
-        Err(format!("Platform '{:?}' not found in sources", platform))
     }
 }
