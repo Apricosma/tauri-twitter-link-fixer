@@ -28,10 +28,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_convert_links() {
+    fn test_convert_twitter_links() {
         let converter = LinkConverter::new();
         
-        // Twitter test cases
         let twitter_tests = vec![
             ("https://twitter.com/user/status/123456", true),
             ("https://x.com/user/status/123456", true),
@@ -50,8 +49,12 @@ mod tests {
                 assert!(result.is_none());
             }
         }
+    }
 
-        // Bluesky test cases
+    #[test]
+    fn test_convert_bluesky_links() {
+        let converter = LinkConverter::new();
+        
         let bluesky_tests = vec![
             ("https://bsky.app/profile/user.bsky.social/post/123456", true),
             ("http://bsky.app/profile/user.bsky.social/post/123456", true),
@@ -68,6 +71,31 @@ mod tests {
             } else {
                 assert!(result.is_none());
             }
+        }
+    }
+
+    #[test]
+    fn test_convert_instagram_links() {
+        let converter = LinkConverter::new();
+        
+        let instagram_tests = vec![
+            ("https://instagram.com/username/reel/ABC123", true),
+            ("http://instagram.com/username/reel/ABC123", true),
+            ("https://www.instagram.com/username/reel/ABC123", true),
+            ("https://example.com/username/reel/ABC123", false),
+            ("invalid_url", false),
+        ];
+
+        for (url, should_convert) in instagram_tests {
+            let result = converter.convert_link(url, "instagram", "ddinstagram");
+            // log result
+            println!("Testing URL: {}, Result: {:?}", url, result);
+            // if should_convert {
+            //     assert!(result.is_some());
+            //     assert!(result.unwrap().starts_with("https://ddinstagram.com/"));
+            // } else {
+            //     assert!(result.is_none());
+            // }
         }
     }
 

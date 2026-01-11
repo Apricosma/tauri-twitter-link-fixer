@@ -142,6 +142,50 @@ impl PlatformOperations for PlatformConverters<crate::config::app_config::TikTok
     }
 }
 
+impl PlatformOperations for PlatformConverters<crate::config::app_config::InstagramConverters> {
+    fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    fn set_enabled(&mut self, enabled: bool) {
+        self.enabled = enabled;
+    }
+
+    fn get_selected_converter(&self) -> Option<String> {
+        self.selected.as_ref().and_then(|c| {
+            serde_json::to_string(c).ok().map(|s| s.trim_matches('"').to_string())
+        })
+    }
+
+    fn set_converter_by_name(&mut self, converter_name: &str) -> bool {
+        if let Some(found) = self.converters.iter().find(|c| {
+            let serialized = serde_json::to_string(c)
+                .unwrap_or_default()
+                .trim_matches('"')
+                .to_string();
+            serialized == converter_name
+        }) {
+            self.selected = Some(found.clone());
+            true
+        } else {
+            false
+        }
+    }
+
+    fn try_convert_link(&self, link_converter: &LinkConverter, url: &str, platform_name: &str) -> Option<String> {
+        if self.enabled {
+            if let Some(selected) = &self.selected {
+                let converter_name = serde_json::to_string(selected)
+                    .unwrap_or_default()
+                    .trim_matches('"')
+                    .to_string();
+                return link_converter.convert_link(url, platform_name, &converter_name);
+            }
+        }
+        None
+    }
+}
+
 // Helper methods for PlatformSource enum
 impl PlatformSource {
     pub fn get_platform_type(&self) -> Platform {
@@ -149,6 +193,7 @@ impl PlatformSource {
             PlatformSource::Twitter(_) => Platform::Twitter,
             PlatformSource::Bluesky(_) => Platform::Bluesky,
             PlatformSource::Tiktok(_) => Platform::Tiktok,
+            PlatformSource::Instagram(_) => Platform::Instagram,
         }
     }
 
@@ -157,6 +202,7 @@ impl PlatformSource {
             PlatformSource::Twitter(_) => "twitter",
             PlatformSource::Bluesky(_) => "bluesky",
             PlatformSource::Tiktok(_) => "tiktok",
+            PlatformSource::Instagram(_) => "instagram",
         }
     }
 
@@ -165,6 +211,7 @@ impl PlatformSource {
             PlatformSource::Twitter(data) => data,
             PlatformSource::Bluesky(data) => data,
             PlatformSource::Tiktok(data) => data,
+            PlatformSource::Instagram(data) => data,
         }
     }
 
@@ -173,6 +220,7 @@ impl PlatformSource {
             PlatformSource::Twitter(data) => data,
             PlatformSource::Bluesky(data) => data,
             PlatformSource::Tiktok(data) => data,
+            PlatformSource::Instagram(data) => data,
         }
     }
 
@@ -187,6 +235,7 @@ pub fn parse_platform(platform_str: &str) -> Option<Platform> {
         "twitter" => Some(Platform::Twitter),
         "bluesky" => Some(Platform::Bluesky),
         "tiktok" => Some(Platform::Tiktok),
+        "instagram" => Some(Platform::Instagram),
         _ => None,
     }
 }

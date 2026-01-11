@@ -1,4 +1,4 @@
-use super::{LinkConverterStrategy, twitter::TwitterConverter, bluesky::BlueSkyConverter, tiktok::TikTokConverter};
+use super::{LinkConverterStrategy, twitter::TwitterConverter, bluesky::BlueSkyConverter, tiktok::TikTokConverter, instagram::InstagramConverter};
 use std::sync::Arc;
 
 /// Registry that manages all available link converter strategies
@@ -14,6 +14,7 @@ impl ConverterRegistry {
                 Arc::new(TwitterConverter::new()),
                 Arc::new(BlueSkyConverter::new()),
                 Arc::new(TikTokConverter::new()),
+                Arc::new(InstagramConverter::new()),
             ],
         }
     }
@@ -84,6 +85,8 @@ mod tests {
         
         assert!(platforms.contains(&"twitter"));
         assert!(platforms.contains(&"bluesky"));
+        assert!(platforms.contains(&"tiktok"));
+        assert!(platforms.contains(&"instagram"));
     }
 
     #[test]
@@ -110,6 +113,32 @@ mod tests {
         );
         
         assert_eq!(result, Some("https://fxbsky.app/profile/user.bsky.social/post/123456".to_string()));
+    }
+
+    #[test]
+    fn test_registry_convert_tiktok() {
+        let registry = ConverterRegistry::new();
+        
+        let result = registry.convert(
+            "https://www.tiktok.com/@user/video/123456",
+            "tiktok",
+            "tfxktok"
+        );
+        
+        assert_eq!(result, Some("https://tfxktok.com/@user/video/123456".to_string()));
+    }
+
+    #[test]
+    fn test_registry_convert_instagram() {
+        let registry = ConverterRegistry::new();
+        
+        let result = registry.convert(
+            "https://www.instagram.com/user/reel/ABC123",
+            "instagram",
+            "ddinstagram"
+        );
+        
+        assert_eq!(result, Some("https://ddinstagram.com/user/reel/ABC123".to_string()));
     }
 
     #[test]

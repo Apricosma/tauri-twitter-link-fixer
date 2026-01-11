@@ -42,6 +42,14 @@ pub enum TikTokConverters {
     Tiktokez,
 }
 
+#[derive(Debug, Serialize, Deserialize, Hash, Eq, PartialEq, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum InstagramConverters {
+    Ddinstagram,
+    Kkinstagram,
+    Instagramez,
+    Eeinstagram,
+}
 // --- Platform Source Definitions ---
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -53,6 +61,8 @@ pub enum PlatformSource {
     Bluesky(PlatformConverters<BlueskyConverters>),
     #[serde(rename = "tiktok")]
     Tiktok(PlatformConverters<TikTokConverters>),
+    #[serde(rename = "instagram")]
+    Instagram(PlatformConverters<InstagramConverters>),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -103,6 +113,16 @@ impl Default for SourcesConfig {
                         TikTokConverters::Tiktokez,
                     ],
                     selected: Some(TikTokConverters::Tfxktok),
+                }),
+                PlatformSource::Instagram(PlatformConverters {
+                    enabled: true,
+                    converters: vec![
+                        InstagramConverters::Ddinstagram,
+                        InstagramConverters::Kkinstagram,
+                        InstagramConverters::Instagramez,
+                        InstagramConverters::Eeinstagram,
+                    ],
+                    selected: Some(InstagramConverters::Kkinstagram),
                 }),
             ],
         }

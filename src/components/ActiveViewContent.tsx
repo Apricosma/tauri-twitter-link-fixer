@@ -7,10 +7,40 @@ interface ActiveViewContentProps {
   setActiveView: (view: string) => void;
 }
 
+const howItWorksByPlatform: Record<string, string[]> = {
+  twitter: [
+    "Copy any Twitter or X link (twitter.com or x.com)",
+    "The link will be automatically converted to your selected format",
+    "Converted link replaces the original in your clipboard",
+    "Paste your converted link into Discord, etc",
+  ],
+  bluesky: [
+    "Copy any BlueSky post link (bsky.app)",
+    "The link will be automatically converted to your selected format",
+    "Converted link replaces the original in your clipboard",
+    "Paste your converted link into Discord, etc",
+  ],
+  tiktok: [
+    "Copy any TikTok video link (tiktok.com/@username/video/id)",
+    "The link will be automatically converted to your selected format",
+    "Converted link replaces the original in your clipboard",
+    "Paste your converted link into Discord, etc",
+  ],
+  instagram: [
+    "Copy any Instagram reel link (instagram.com/username/reel/id)",
+    "The link will be automatically converted to your selected format",
+    "Converted link replaces the original in your clipboard",
+    "Paste your converted link into Discord, etc",
+  ],
+};
+
 // Export ViewType as a type alias for string to maintain compatibility
 export type ViewType = string;
 
-const ActiveViewContent = ({ activeView, setActiveView }: ActiveViewContentProps) => {
+const ActiveViewContent = ({
+  activeView,
+  setActiveView,
+}: ActiveViewContentProps) => {
   const { config, loading } = useConfig();
 
   if (loading || !config) {
@@ -33,8 +63,8 @@ const ActiveViewContent = ({ activeView, setActiveView }: ActiveViewContentProps
   }
 
   // Find platform in config
-  const platformSource = config.sources.find(s => s.platform === activeView);
-
+  const platformSource = config.sources.find((s) => s.platform === activeView);
+  
   if (!platformSource) {
     return (
       <div className="flex-1 h-full rounded-lg border bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-hidden border-b-0 rounded-bl-none rounded-br-none">
@@ -45,19 +75,23 @@ const ActiveViewContent = ({ activeView, setActiveView }: ActiveViewContentProps
     );
   }
 
+  const platform = platformSource.platform;
+
+  const defaultSteps = [
+    `Copy any ${platformSource.metadata.title} link`,
+    "The link will be automatically converted to your selected format",
+    "Converted link replaces the original in your clipboard",
+    "Paste your converted link into Discord, etc",
+  ];
+
   // Dynamic platform view
   return (
     <div className="flex-1 h-full rounded-lg border bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-hidden border-b-0 rounded-bl-none rounded-br-none">
       <ServiceView
-        platform={platformSource.platform}
+        platform={platform}
         title={platformSource.metadata.title}
         description={`Convert ${platformSource.metadata.title} links`}
-        howItWorksSteps={[
-          `Copy any ${platformSource.metadata.title} link`,
-          "The link will be automatically converted to your selected format",
-          "Converted link replaces the original in your clipboard",
-          "Paste your converted link into Discord, etc"
-        ]}
+        howItWorksSteps={howItWorksByPlatform[platform] ?? defaultSteps}
         status="available"
       />
     </div>
