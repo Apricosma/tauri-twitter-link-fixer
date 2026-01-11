@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { ViewType } from "../components/ActiveViewContent";
 import { useConfig } from "../hooks/useConfig";
 import { getSimpleIcon } from "../utils/iconMapper";
-import { HelpCircle, CircleAlert, Car } from "lucide-react";
+import { HelpCircle, CircleAlert } from "lucide-react";
 import {
   Card,
   CardContent,
