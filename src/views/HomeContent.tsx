@@ -111,16 +111,17 @@ const HomeContent = ({ setActiveView }: HomeContentProps) => {
         <CardContent>
           <div className="flex flex-col gap-y-4">
             <p>
-              All included conversion services
+              All included embedding services
               <span className="text-primary"> are not</span> affiliated with
-              Cosma Converter
+              Cosma Converter. We have no control over their availability or
+              usage.
             </p>
             <p>
               These services may or may not work, and their availability can
               change without notice. If a service stops working for more than a
-              week, please notify us via GitHub Issues
+              week, please notify us via GitHub Issues.
             </p>
-            <p>Please use these services at your own discretion</p>
+            <p>Please use these services at your own discretion.</p>
           </div>
         </CardContent>
       </Card>
