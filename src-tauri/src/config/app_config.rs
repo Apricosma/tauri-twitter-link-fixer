@@ -93,7 +93,7 @@ impl Default for SourcesConfig {
                         TwitterConverters::Fixupx,
                         TwitterConverters::Fixvx,
                     ],
-                    selected: Some(TwitterConverters::Fxtwitter),
+                    selected: Some(TwitterConverters::Vxtwitter),
                 }),
                 PlatformSource::Bluesky(PlatformConverters {
                     enabled: true,
@@ -134,10 +134,10 @@ impl SourcesConfig {
         let config_path = Path::new(path);
 
         // Development: Always recreate config
-        let should_recreate = true;
+        // let should_recreate = true;
         
         // Production: Only create if missing
-        // let should_recreate = !config_path.exists();
+        let should_recreate = !config_path.exists();
 
         if should_recreate {
             println!("Recreating config file at {:?}", config_path);
