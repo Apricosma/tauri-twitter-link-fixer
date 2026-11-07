@@ -4,7 +4,10 @@ pub fn setup_app_exit_handler(app: &AppHandle) {
     use crate::state::StateManager;
 
     let app_handle = app.clone();
-    let window = app.get_webview_window("main").expect("Failed to get main window");
+    let Some(window) = app.get_webview_window("main") else {
+        eprintln!("Main window not ready; exit handler was not attached.");
+        return;
+    };
 
     window.on_window_event(move |event| {
         if let tauri::WindowEvent::CloseRequested { api, .. } = event {
