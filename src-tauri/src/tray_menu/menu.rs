@@ -38,16 +38,22 @@ fn handle_tray_icon_click_event<R: Runtime>(tray: &TrayIcon<R>, event: tauri::tr
 }
 
 pub fn create_tray<R: Runtime>(app: &AppHandle<R>, menu: &Menu<R>) -> tauri::Result<TrayIcon<R>> {
-    let tray = TrayIconBuilder::new()
+    let mut tray_builder = TrayIconBuilder::new()
         .on_tray_icon_event(|tray, event| {
             handle_tray_icon_click_event(tray, event);
         })
         .on_menu_event(|app, event| {
             process_menu_event(app, event.id.as_ref());
         })
-        .icon(app.default_window_icon().unwrap().clone())
         .menu(menu)
-        .show_menu_on_left_click(false)
-        .build(app)?;
+        .show_menu_on_left_click(false);
+
+    if let Some(icon) = app.default_window_icon() {
+        tray_builder = tray_builder.icon(icon.clone());
+    } else {
+        eprintln!("No default window icon available; tray icon will be created without a custom icon.");
+    }
+
+    let tray = tray_builder.build(app)?;
     Ok(tray)
 }

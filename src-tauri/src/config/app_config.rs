@@ -133,31 +133,46 @@ impl SourcesConfig {
     pub fn from_file_or_default(path: &str) -> Result<Self, ConfigError> {
         let config_path = Path::new(path);
 
-        // Development: Always recreate config
-        // let should_recreate = true;
-        
-        // Production: Only create if missing
-        let should_recreate = !config_path.exists();
-
-        if should_recreate {
-            println!("Recreating config file at {:?}", config_path);
-
+        if !config_path.exists() {
+            println!("Config file not found at {:?}; creating default config.", config_path);
             let default = Self::default();
-            let yaml = serde_yaml::to_string(&default).expect("Failed to serialize default config");
-
-            if let Some(parent) = config_path.parent() {
-                if !parent.exists() {
-                    fs::create_dir_all(parent).expect("Failed to create config directory");
-                }
-            }
-
-            fs::write(&config_path, yaml).expect("Failed to write default config file");
+            Self::write_default_config(config_path, &default);
+            return Ok(default);
         }
 
         let settings = Config::builder()
             .add_source(File::with_name(path.strip_suffix(".yaml").unwrap_or(path)))
-            .build()?;
-        settings.try_deserialize()
+            .build();
+
+        match settings {
+            Ok(settings) => match settings.try_deserialize() {
+                Ok(config) => Ok(config),
+                Err(err) => {
+                    eprintln!("Invalid config at {:?}: {}. Resetting to defaults.", config_path, err);
+                    let default = Self::default();
+                    Self::write_default_config(config_path, &default);
+                    Ok(default)
+                }
+            },
+            Err(err) => {
+                eprintln!("Failed to read config at {:?}: {}. Resetting to defaults.", config_path, err);
+                let default = Self::default();
+                Self::write_default_config(config_path, &default);
+                Ok(default)
+            }
+        }
+    }
+
+    fn write_default_config(config_path: &Path, default: &Self) {
+        let yaml = serde_yaml::to_string(default).expect("Failed to serialize default config");
+
+        if let Some(parent) = config_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent).expect("Failed to create config directory");
+            }
+        }
+
+        fs::write(config_path, yaml).expect("Failed to write default config file");
     }
 
     pub fn save_to_file(&self, path: &str) {
@@ -166,5 +181,31 @@ impl SourcesConfig {
 
         let yaml = serde_yaml::to_string(self).expect("Failed to serialize config");
         fs::write(&config_path, yaml).expect("Failed to write config file");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn returns_default_config_for_stale_or_invalid_yaml() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!("tauri-config-test-{unique}"));
+        let path = dir.join("config.yaml");
+
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(&path, "platforms: []\n").unwrap();
+
+        let config = SourcesConfig::from_file_or_default(path.to_str().unwrap()).unwrap();
+
+        assert!(!config.sources.is_empty());
+        assert!(config.sources.iter().any(|source| matches!(source, PlatformSource::Twitter(_))));
+
+        std::fs::remove_dir_all(dir).unwrap();
     }
 }
